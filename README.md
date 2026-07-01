@@ -116,9 +116,6 @@ data/      : CSV 등 공개 가능한 입력 데이터
 ## Documents
 
 - [Projects Overview](./projects/README.md)
-- [Skill Summary](./docs/skill_summary.md)
-- [Troubleshooting](./docs/troubleshooting.md)
-- [Task Test Preparation](./docs/task_test_preparation.md)
 
 ---
 
