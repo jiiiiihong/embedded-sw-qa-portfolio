@@ -1,92 +1,124 @@
 # Embedded SW QA Portfolio
 
-## 지원 직무
-**Embedded SW QA Engineer / 차량제어 SW 플랫폼 품질 점검**
+> **센서 입력, 제어 로직, 하드웨어 동작, 결과 검증을 하나의 흐름으로 연결해 본 프로젝트 포트폴리오입니다.**
 
-본 포트폴리오는 임베디드 시스템, 로봇 제어, 비전 기반 검사, 시뮬레이션 프로젝트를 통해 쌓은 **시스템 구현 및 검증 경험**을 정리한 자료입니다.
-
-저는 단순히 기능을 구현하는 것보다, **센서 입력, 제어 판단, 하드웨어 동작, 결과 검증**이 하나의 흐름으로 연결되어야 실제 시스템 품질이 확보된다고 생각합니다. STM32 기반 임베디드 시스템과 로봇·비전 프로젝트를 수행하며 오류 원인을 추적하고, 동작 결과를 검증 가능한 구조로 만드는 경험을 쌓았습니다.
+Embedded SW QA Engineer / 차량제어 SW 플랫폼 품질 점검 직무를 목표로, 임베디드 시스템·로봇 제어·비전 검사·시뮬레이션 프로젝트에서 수행한 **구현, 검증, 트러블슈팅 경험**을 정리했습니다.
 
 ---
 
-## 핵심 역량
+## Featured Demos
+
+### AMR Security System: 2대 TurtleBot 동시 추적
+![AMR dual tracking](./projects/02_amr_security_system/media/amr_patrol_tracking_dual.gif)
+
+- ROS 2 / TurtleBot4 / Nav2 기반 순찰 및 추적 시스템
+- 순찰 중 도난 좌표 수신 시 기존 goal cancel 후 추적 모드 전환
+- 2대 TurtleBot이 동시에 target을 추적하도록 상태 전환 로직 구성
+
+[자세히 보기](./projects/02_amr_security_system/README.md)
+
+---
+
+### Braille Robot Validation: 로봇팔 출력 결과 검증
+![Braille validation](./projects/03_braille_robot_validation/media/braille_robot_validation_late.gif)
+
+- 로봇팔이 제작한 점자를 웹캠과 OpenCV로 검증
+- 문자열 해석이 아닌 `expected cell sequence`와 `actual cell sequence` 비교로 pass/fail 판정
+- ROI, 점 후보 검출, 줄 분리, 점자 칸 분리, 디버그 이미지 저장 구조 구현
+
+[자세히 보기](./projects/03_braille_robot_validation/README.md)
+
+---
+
+### Isaac Sim Sorting: QR 기반 2대 로봇 물류 분류
+![Isaac Sim sorting](./projects/05_isaac_sim_sorting/media/isaac_sim_sorting.gif)
+
+- Isaac Sim 환경에서 QR 부착 박스를 출고일 기준으로 분류
+- robot1은 today / not-today 1차 분류, robot2는 day2 / day3 2차 분류 담당
+- QR decode 실패 fallback, box QR face-up, bbox overlap final gate 판정 구현
+
+[자세히 보기](./projects/05_isaac_sim_sorting/README.md)
+
+---
+
+## Project Map
+
+| No. | Project | Main Domain | Core Evidence | QA 관점 핵심 |
+|---|---|---|---|---|
+| 01 | [STM32 Embedded System](./projects/01_stm32_embedded_system/README.md) | Embedded C / MCU | `final_project.c` | GPIO, Timer, ADC/DMA, 입력 상태 전이 검증 |
+| 02 | [AMR Security System](./projects/02_amr_security_system/README.md) | Robotics / ROS 2 | `real_final.py`, demo GIF | 순찰 중 예외 전환, goal cancel, 다중 로봇 추적 검증 |
+| 03 | [Braille Robot Validation](./projects/03_braille_robot_validation/README.md) | Robot Vision / Validation | validation source, demo GIF | 실제 출력물을 영상 기반 점형 단위로 검증 |
+| 04 | [Screw Defect Detection Dashboard](./projects/04_screw_defect_detection/README.md) | Vision Inspection / Web GUI | sanitized dashboard source, demo GIF | 검사 결과 정규화, 3D 시각화, 예외 상황 표시 |
+| 05 | [Isaac Sim Sorting](./projects/05_isaac_sim_sorting/README.md) | Simulation / Multi-Robot | Isaac Sim source, package CSV, demo GIF | QR 인식, fallback, 2단계 분류, 도착 판정 검증 |
+
+---
+
+## Core Competencies
 
 ### Embedded SW
 - STM32F103RB 기반 MCU 제어 경험
-- GPIO, Timer, Interrupt, ADC, DMA, EXTI 활용
-- Keypad, Dot Matrix, 온도 센서 기반 임베디드 시스템 구현
-- C 기반 상태 제어 및 인터럽트 처리 경험
+- GPIO, Timer, Interrupt, ADC, DMA, USART, NVIC 설정 경험
+- Keypad 입력, Dot Matrix 출력, 온도 센서 데이터 처리 구현
+- JTAG/AFIO pin conflict, 입력 bouncing, 하드웨어 결함 대응 경험
 
 ### Robotics & Sensor Integration
-- AMR 기반 도난 방지 시스템 구현
-- RGB Camera, Depth Camera, LiDAR 기반 객체 탐지 및 추적
-- 로봇팔 기반 점자 제작 및 나사 체결 검사 프로젝트 수행
-- RealSense Camera 기반 비전 검사 흐름 구현
+- ROS 2 / TurtleBot4 / Nav2 기반 AMR 순찰 및 추적 시스템 구현
+- 로봇팔 기반 점자 제작 결과 검증 프로젝트 수행
+- RealSense / 검사 결과를 Web GUI로 시각화하는 대시보드 구현
+- Isaac Sim 기반 2대 로봇 물류 분류 시뮬레이션 구현
 
 ### SW QA / Validation
-- 기능 구현 후 실제 동작 결과 검증
-- 센서 입력값과 로봇 동작 결과 간 불일치 원인 분석
-- 단계별 통합 과정에서 발생한 오류 추적 및 수정
-- 점자 검증, 나사 체결 불량 감지, Isaac Sim 시뮬레이션 검증 경험
-
-### Programming
-- C / C++ / Python
-- OpenCV
-- ROS 기반 로봇 시스템 경험
-- Isaac Sim 기반 시뮬레이션 개발 경험
+- 실제 동작 결과를 영상, 로그, JSON, debug image로 남기는 검증 구조 설계
+- 센서 입력값과 로봇/MCU/UI 동작 결과 간 불일치 원인 분석
+- fallback, timeout, goal cancel, bbox overlap 등 예외 조건 설계
+- 단순 문자열/화면 표시보다 측정 가능한 기준으로 pass/fail 판정 정의
 
 ---
 
-## 주요 프로젝트
+## Common Development Perspective
 
-| No. | Project | Keywords | Summary |
-|---|---|---|---|
-| 01 | [STM32 Embedded System](./projects/01_stm32_embedded_system/README.md) | STM32, C, Timer, Interrupt, DMA, ADC | 키패드, 온도센서, Dot Matrix를 활용한 임베디드 시스템 구현 |
-| 02 | [AMR Security System](./projects/02_amr_security_system/README.md) | AMR, Camera, LiDAR, Tracking | 박물관 환경에서 AMR 기반 도난 방지 및 추적 시스템 구현 |
-| 03 | [Braille Robot Validation](./projects/03_braille_robot_validation/README.md) | Robot Arm, OpenCV, Validation | 로봇팔 기반 맞춤형 점자 제작 및 점형 검증 |
-| 04 | [Screw Defect Detection](./projects/04_screw_defect_detection/README.md) | RealSense, Vision, Robot Arm | 나사 체결 불량 감지 및 조치 시스템 구현 |
-| 05 | [Isaac Sim Sorting](./projects/05_isaac_sim_sorting/README.md) | Isaac Sim, QR, Simulation | 물류 창고 박스 분류 시뮬레이션 구현 |
+```mermaid
+flowchart LR
+    A[Sensor / Input] --> B[Pre-processing]
+    B --> C[Decision Logic]
+    C --> D[Robot / MCU / UI Action]
+    D --> E[Result Validation]
+    E --> F[Troubleshooting]
+    F --> C
+```
 
----
-
-## 차량제어 SW 플랫폼 품질 점검 직무와의 연결
-
-이 직무는 기능안전 및 A-SPICE 기준에 따라 SW 개발 프로세스 준수 여부를 점검하고, SW 품질 지표 수립, 필드 이슈 원인 분석, 재발 방지 대책 이행을 확인하는 역할입니다.
-
-제가 수행한 프로젝트들은 단순 구현에서 끝나지 않고, 실제 동작 결과를 확인하고 오류 원인을 추적하는 과정을 포함했습니다.
-
-- STM32 프로젝트: 주변장치 설정, 인터럽트, GPIO, ADC/DMA를 활용한 임베디드 동작 검증
-- AMR 프로젝트: 센서 입력과 추적 동작 간 연결 검증
-- 점자 프로젝트: 로봇팔 출력 결과를 비전 기반으로 검증
-- 나사 체결 프로젝트: 검사 결과와 로봇 조치 흐름 연결
-- Isaac Sim 프로젝트: QR 인식, 박스 방향, 로봇 분류 동작의 단계별 통합 검증
+대부분의 프로젝트는 처음부터 완성된 구조가 아니라, 작은 기능 검증에서 시작해 실패 원인을 분리하고 다시 통합하는 방식으로 진행했습니다. 특히 **왜 실패했는지, 어떤 조건에서 재현되는지, 어떤 기준으로 성공을 판단할지**를 정리하는 데 집중했습니다.
 
 ---
 
-## 문제 해결 경험
+## Repository Structure
 
-프로젝트 수행 중 단순 기능 구현보다 오류 원인을 추적하고 재발을 방지하는 과정에 집중했습니다.
+```text
+projects/
+├── 01_stm32_embedded_system/       # Embedded C / MCU peripheral control
+├── 02_amr_security_system/         # ROS 2 AMR patrol and chase system
+├── 03_braille_robot_validation/    # Robot output validation with OpenCV
+├── 04_screw_defect_detection/      # Inspection dashboard Web GUI
+└── 05_isaac_sim_sorting/           # Isaac Sim multi-robot sorting simulation
+```
 
-- STM32 프로젝트에서 JTAG 핀 설정 문제로 GPIO 입력이 정상 동작하지 않는 원인을 분석하고 AFIO 설정을 수정
-- Dot Matrix 일부 핀 결함 상황에서 8x15 출력 구조로 우회하여 기능 완성
-- Isaac Sim 프로젝트에서 QR 인식, 박스 방향, 로봇 동작 불일치 문제를 단계별로 분리하여 디버깅
-- 로봇팔/비전 프로젝트에서 실제 출력 결과와 인식 결과 간 차이를 검증 로직으로 보완
+각 프로젝트 폴더에는 다음 내용을 정리했습니다.
 
-자세한 내용은 [Troubleshooting](./docs/troubleshooting.md)에 정리했습니다.
+```text
+README.md  : 프로젝트 개요, 개발 과정, 트러블슈팅, My Contribution, How to Read This Code
+src/       : 최종 소스 코드 또는 공개 가능한 핵심 코드
+media/     : 시연 GIF, 캡처 이미지
+data/      : CSV 등 공개 가능한 입력 데이터
+```
 
 ---
 
-## 추가 문서
+## Documents
 
+- [Projects Overview](./projects/README.md)
 - [Skill Summary](./docs/skill_summary.md)
 - [Troubleshooting](./docs/troubleshooting.md)
 - [Task Test Preparation](./docs/task_test_preparation.md)
-
----
-
-## Portfolio PDF
-
-포트폴리오 PDF는 추후 `portfolio/` 폴더에 추가할 예정입니다.
 
 ---
 
