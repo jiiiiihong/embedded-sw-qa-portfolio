@@ -24,6 +24,33 @@
 
 ---
 
+## My Contribution
+
+- 검사 결과를 Firebase Realtime Database에서 구독해 작업대별로 표시하는 Web GUI를 구현했습니다.
+- 작업대 선택 dropdown, 검사 요약, 나사별 정상/불량 목록, 상세 modal UI를 구성했습니다.
+- Plotly 기반 3D scatter view로 나사 좌표와 상태를 시각화했습니다.
+- 검사 데이터가 배열/객체, `screws`/`markers` 등 다양한 형태로 들어와도 UI가 동작하도록 정규화 함수를 구현했습니다.
+- `normal`, `ok`, `pass`, `ng`, `error` 등 다양한 status 표현을 `normal`/`defect` 기준으로 통합했습니다.
+- 공개 저장소 업로드를 위해 Firebase 설정값을 제거한 sanitized 버전으로 코드를 관리했습니다.
+
+---
+
+## How to Read This Code
+
+| 구간 | 읽을 포인트 |
+|---|---|
+| Firebase config | 공개용 파일에서는 설정값이 제거되어 있는지 확인 |
+| database subscription | `live_scan/workstations` 데이터를 어떻게 구독하는지 확인 |
+| normalize functions | 다양한 입력 schema를 내부 표준 구조로 바꾸는 방식 확인 |
+| status normalization | normal/defect 상태 기준을 어떻게 통합하는지 확인 |
+| Plotly render | 나사 좌표와 point cloud를 3D로 표시하는 방식 확인 |
+| modal / action logic | 불량 상세 정보 표시와 조치 완료 흐름 확인 |
+| exception panel | 예외 상황을 UI에 어떻게 반영하는지 확인 |
+
+이 코드는 Web GUI 담당 영역을 보여주는 공개용 sanitized 파일입니다. 실제 검사 알고리즘과 로봇 제어 전체를 재현하기보다는 **검사 결과를 사람이 판단 가능한 형태로 정규화하고 시각화한 구조**를 보는 것이 핵심입니다.
+
+---
+
 ## 시스템 구조
 
 ```mermaid
