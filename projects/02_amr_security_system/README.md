@@ -24,6 +24,32 @@
 
 ---
 
+## My Contribution
+
+- ROS 2 `rclpy` 기반으로 TurtleBot4 순찰 및 추적 node 구조를 구현했습니다.
+- Nav2 `NavigateToPose` action을 사용해 waypoint 순찰과 추적 goal 전송 흐름을 구성했습니다.
+- 순찰 중 도둑 좌표가 수신되면 기존 navigation goal을 취소하고 chase mode로 전환하는 상태 전환 로직을 구현했습니다.
+- AMCL 현재 위치와 도둑 좌표를 이용해 target 바로 위가 아닌 **0.3m 앞 지점**을 추적 goal로 계산했습니다.
+- goal이 너무 자주 갱신되지 않도록 0.05m 이동량 기준의 throttle 조건을 적용했습니다.
+- 동료 로봇에게 교대 순찰 시작 신호를 반복 발행해 topic 유실 가능성을 줄였습니다.
+
+---
+
+## How to Read This Code
+
+| 구간 | 읽을 포인트 |
+|---|---|
+| node initialization | publisher, subscriber, callback group, executor 구성 확인 |
+| patrol loop | waypoint 순찰과 도착 이벤트 발행 흐름 확인 |
+| thief position callback | 외부 이벤트를 어떻게 chase request로 바꾸는지 확인 |
+| wait_nav_complete | 순찰 중 추적 요청이 들어왔을 때 goal cancel 조건 확인 |
+| chase action node | AMCL pose와 target position으로 추적 goal을 계산하는 방식 확인 |
+| situation end callback | 추적 종료 조건과 상태 초기화 흐름 확인 |
+
+이 코드는 TurtleBot4, ROS 2, Nav2, AMCL 환경에 의존합니다. 저장소에서는 전체 실행보다 **비동기 이벤트 처리, goal cancel, chase mode 전환, 2대 로봇 협업 구조**를 중심으로 보는 것이 좋습니다.
+
+---
+
 ## 시스템 구조
 
 ```mermaid
