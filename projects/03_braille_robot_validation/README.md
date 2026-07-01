@@ -24,6 +24,34 @@
 
 ---
 
+## My Contribution
+
+- 웹캠 프레임에서 점자 영역을 선택하는 ROI 기반 검증 흐름을 구현했습니다.
+- OpenCV 기반 전처리, local peak, threshold, contour filtering을 조합해 점 후보를 검출했습니다.
+- 여러 줄 점자를 처리하기 위해 y좌표 분포 기반 line split과 line box crop 구조를 구성했습니다.
+- x좌표 column gap을 이용해 점자 칸을 분리하고, 각 칸을 6점 cell mask로 변환했습니다.
+- 한글 점자 해석 후보가 여러 개 생기는 문제를 고려해 최종 판정을 문자열이 아니라 `expected_cells`와 `actual_cells` 비교로 바꿨습니다.
+- 디버그 이미지와 JSON 결과를 저장해 검증 실패 원인을 다시 확인할 수 있도록 했습니다.
+
+---
+
+## How to Read This Code
+
+| 구간 | 읽을 포인트 |
+|---|---|
+| argument / config | 촬영 조건과 검출 파라미터를 어떻게 조절하는지 확인 |
+| webcam capture | 프레임 캡처, ROI 선택, 가이드라인 표시 흐름 확인 |
+| preprocessing | grayscale, blur, threshold, morphology 처리 확인 |
+| dot detection | contour filtering과 dot merge 기준 확인 |
+| line split | 여러 줄 점자에서 y분포로 줄을 나누는 방식 확인 |
+| cell segmentation | column gap으로 점자 칸을 분리하는 방식 확인 |
+| validation | expected cell sequence와 actual cell sequence 비교 방식 확인 |
+| debug export | 이미지와 JSON 로그를 어떻게 저장하는지 확인 |
+
+이 코드는 촬영 각도, 조명, 카메라 해상도에 영향을 받습니다. 따라서 코드는 “항상 같은 이미지에서 완벽히 동작하는 정답 코드”라기보다 **실제 검증 환경의 흔들림을 파라미터와 디버그 산출물로 관리한 코드**로 보는 것이 적절합니다.
+
+---
+
 ## 시스템 구조
 
 ```mermaid
