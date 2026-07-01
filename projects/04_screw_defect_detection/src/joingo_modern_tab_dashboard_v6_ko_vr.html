@@ -1,0 +1,2584 @@
+<!--
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  JoinGo Smart Screw Inspection Dashboard                         │
+  │  파일: joingo_modern_tab_dashboard_v6_ko_vr.html                 │
+  │                                                                  │
+  │  개발자 (Developer)                                               │
+  │  ├─ Web GUI   : 김지홍 (Kim Ji-hong)                             │
+  │  └─ WebXR / VR: 조의연 (Cho Eui-yeon)                           │
+  └──────────────────────────────────────────────────────────────────┘
+-->
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JoinGo | Smart Screw Inspection Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    :root {
+      --bg: #070b10;
+      --bg2: #0a111a;
+      --panel: #111a25;
+      --panel2: #152232;
+      --panel3: #1b2a3d;
+      --line: rgba(255, 255, 255, .105);
+      --line2: rgba(255, 255, 255, .18);
+      --text: #ecf4ff;
+      --muted: #9aaabd;
+      --dim: #68798c;
+      --cyan: #39d7ff;
+      --blue: #4d8dff;
+      --green: #55e08a;
+      --red: #ff5b68;
+      --yellow: #f4c85a;
+      --orange: #ff9d47;
+      --radius: 22px;
+      --font: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Inter, system-ui, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    body {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 5%, rgba(57, 215, 255, .16), transparent 32%),
+        radial-gradient(circle at 80% 0%, rgba(85, 224, 138, .12), transparent 28%),
+        linear-gradient(135deg, #06090e 0%, #0a121d 55%, #071019 100%);
+    }
+
+    button,
+    select,
+    input {
+      font-family: inherit;
+    }
+
+    .topbar {
+      height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7, 11, 16, .78);
+      backdrop-filter: blur(16px);
+      position: relative;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 280px;
+    }
+
+    .mark {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #51e1ff;
+      letter-spacing: .02em;
+      background: linear-gradient(145deg, rgba(57, 215, 255, .18), rgba(77, 141, 255, .08));
+      border: 1px solid rgba(57, 215, 255, .35);
+      box-shadow: 0 0 28px rgba(57, 215, 255, .08) inset, 0 12px 34px rgba(0, 0, 0, .25);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: -.06em;
+      line-height: 1;
+    }
+
+    .brand p {
+      margin: 6px 0 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .22em;
+      color: var(--muted);
+    }
+
+    .nav-tabs {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid var(--line);
+      padding: 6px;
+      border-radius: 18px;
+      box-shadow: 0 16px 44px rgba(0, 0, 0, .18);
+      backdrop-filter: blur(12px);
+    }
+
+    .tab-btn {
+      border: 0;
+      color: var(--muted);
+      background: transparent;
+      padding: 11px 16px;
+      border-radius: 13px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .tab-btn.active {
+      color: #061017;
+      background: linear-gradient(135deg, var(--cyan), #7df0ff);
+      box-shadow: 0 0 24px rgba(57, 215, 255, .18);
+    }
+
+    .status-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-width: 280px;
+      justify-content: flex-end;
+    }
+
+    .pill,
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      border: 1px solid var(--line2);
+      background: rgba(255, 255, 255, .055);
+    }
+
+    .pill.ok,
+    .tag.ok {
+      color: #86f4aa;
+      background: rgba(85, 224, 138, .12);
+      border-color: rgba(85, 224, 138, .32);
+    }
+
+    .pill.warn,
+    .tag.warn {
+      color: #ffd777;
+      background: rgba(244, 200, 90, .12);
+      border-color: rgba(244, 200, 90, .32);
+    }
+
+    .pill.danger,
+    .tag.danger {
+      color: #ff8790;
+      background: rgba(255, 91, 104, .12);
+      border-color: rgba(255, 91, 104, .34);
+    }
+
+    .tag.blue {
+      color: #8cecff;
+      background: rgba(57, 215, 255, .11);
+      border-color: rgba(57, 215, 255, .35);
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
+      box-shadow: 0 0 14px currentColor;
+    }
+
+    .app {
+      height: calc(100vh - 78px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .page {
+      display: none;
+      height: 100%;
+      overflow: auto;
+      padding: 30px;
+    }
+
+    .page.active {
+      display: block;
+      animation: fadeUp .28s ease both;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(17, 26, 37, .94), rgba(11, 17, 25, .92));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 22px 70px rgba(0, 0, 0, .26);
+    }
+
+    .btn {
+      border: 1px solid var(--line2);
+      background: rgba(255, 255, 255, .06);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(57, 215, 255, .38);
+      background: rgba(57, 215, 255, .1);
+    }
+
+    .btn.primary {
+      color: #061017;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--cyan), #88f1ff);
+      box-shadow: 0 0 28px rgba(57, 215, 255, .16);
+    }
+
+    .btn.green {
+      color: #07130d;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--green), #a4f7bf);
+    }
+
+    .btn.danger {
+      color: #fff;
+      background: rgba(255, 91, 104, .14);
+      border-color: rgba(255, 91, 104, .35);
+    }
+
+    .select,
+    .input {
+      height: 48px;
+      min-width: 130px;
+      color: var(--text);
+      background: rgba(255, 255, 255, .045);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0 14px;
+      font-weight: 900;
+      outline: none;
+    }
+
+    .select option {
+      background: #101923;
+      color: #edf3fa;
+    }
+
+    .input {
+      width: 100%;
+      font-weight: 700;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 23px;
+      letter-spacing: -.05em;
+    }
+
+    .section-desc {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 22px 24px 0;
+    }
+
+    /* HOME */
+    .home-shell {
+      min-height: 100%;
+      display: block;
+    }
+
+    .hero-card {
+      padding: 64px 48px 46px;
+      position: relative;
+      overflow: hidden;
+      min-height: calc(100vh - 138px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      isolation: isolate;
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(57, 215, 255, .14), transparent 35%),
+        radial-gradient(circle at 78% 60%, rgba(85, 224, 138, .10), transparent 36%),
+        linear-gradient(135deg, rgba(255, 255, 255, .035), transparent 45%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 880px;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      color: var(--cyan);
+      letter-spacing: .22em;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .hero-content h2 {
+      margin: 18px 0 20px;
+      font-size: 58px;
+      letter-spacing: -.075em;
+      line-height: 1.04;
+      word-break: keep-all;
+    }
+
+    .hero-content p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.75;
+      max-width: 760px;
+      word-break: keep-all;
+    }
+
+    .home-tab-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 28px;
+      color: #aeefff;
+      border: 1px solid rgba(57, 215, 255, .22);
+      background: rgba(57, 215, 255, .06);
+      border-radius: 999px;
+      padding: 11px 15px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+    }
+
+    .home-tab-hint span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan);
+    }
+
+    .anim-card {
+      display: none;
+    }
+
+    .hero-bg-animation {
+      position: absolute;
+      z-index: 1;
+      left: 34%;
+      top: 48%;
+      transform: translateY(-50%);
+      width: min(66vw, 980px);
+      aspect-ratio: 1.25/1;
+      opacity: .26;
+      filter: blur(.2px) saturate(.92);
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .hero-bg-animation::after {
+      content: "";
+      position: absolute;
+      inset: 4% 6%;
+      border-radius: 44px;
+      background:
+        radial-gradient(circle at 30% 28%, rgba(57, 215, 255, .13), transparent 32%),
+        radial-gradient(circle at 72% 68%, rgba(85, 224, 138, .10), transparent 34%);
+      opacity: .82;
+    }
+
+    .screw-svg {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 26px 46px rgba(0, 0, 0, .38));
+    }
+
+    .screw-node {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .screw-node .screw-motion {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: screwDepthCycle 9s cubic-bezier(.55, .02, .26, 1) infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .screw-node .screw-rotor {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: screwRotateCycle 9s linear infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .screw-node .thread-line {
+      animation: threadGlowCycle 9s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .screw-node .bubble {
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      opacity: 0;
+      filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .45));
+    }
+
+    .screw-node .bubble.defect {
+      animation: bubbleDefectCycle 9s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .screw-node .bubble.working {
+      animation: bubbleWorkingCycle 9s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .screw-node .bubble.normal {
+      animation: bubbleNormalCycle 9s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    .screw-node .status-orbit {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: orbitPulseCycle 9s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+
+    @keyframes screwDepthCycle {
+
+      0%,
+      16% {
+        transform: translateY(-24px);
+      }
+
+      26%,
+      44% {
+        transform: translateY(-4px);
+      }
+
+      52%,
+      82% {
+        transform: translateY(20px);
+      }
+
+      94%,
+      100% {
+        transform: translateY(-24px);
+      }
+    }
+
+    @keyframes screwRotateCycle {
+
+      /* 풀린 상태: 불량감지 */
+      0%,
+      16% {
+        transform: rotate(-150deg);
+      }
+
+      /* 불량 → 조치중 → 정상체결: 체결 방향으로 회전 */
+      52%,
+      82% {
+        transform: rotate(900deg);
+      }
+
+      /* 정상체결 → 불량감지: 반대 방향으로 되감기 */
+      94%,
+      100% {
+        transform: rotate(-150deg);
+      }
+    }
+
+    @keyframes threadGlowCycle {
+
+      0%,
+      18%,
+      94%,
+      100% {
+        opacity: .42;
+        stroke-width: 4;
+      }
+
+      28%,
+      48% {
+        opacity: .82;
+        stroke-width: 5;
+      }
+
+      54%,
+      82% {
+        opacity: .95;
+        stroke-width: 5.4;
+      }
+    }
+
+    @keyframes bubbleDefectCycle {
+
+      0%,
+      18% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      21%,
+      88% {
+        opacity: 0;
+        transform: translateY(10px) scale(.94);
+      }
+
+      91%,
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes bubbleWorkingCycle {
+
+      0%,
+      20%,
+      51%,
+      100% {
+        opacity: 0;
+        transform: translateY(10px) scale(.94);
+      }
+
+      25%,
+      46% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes bubbleNormalCycle {
+
+      0%,
+      49%,
+      86%,
+      100% {
+        opacity: 0;
+        transform: translateY(10px) scale(.94);
+      }
+
+      53%,
+      83% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes orbitPulseCycle {
+
+      0%,
+      18%,
+      94%,
+      100% {
+        opacity: .55;
+        stroke: #ff5d6c;
+        stroke-dashoffset: 0;
+      }
+
+      25%,
+      48% {
+        opacity: .72;
+        stroke: #ffd166;
+        stroke-dashoffset: -30;
+      }
+
+      54%,
+      84% {
+        opacity: .82;
+        stroke: #55e08a;
+        stroke-dashoffset: -72;
+      }
+    }
+
+    /* 3D PAGE */
+    .scan-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      gap: 20px;
+      height: calc(100vh - 138px);
+      min-height: 650px;
+    }
+
+    .plot-card {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 24px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .plot-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 430px;
+      border-top: 1px solid rgba(255, 255, 255, .035);
+    }
+
+    #plot {
+      position: absolute;
+      inset: 0;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      padding: 26px;
+      background: rgba(7, 11, 16, .66);
+      backdrop-filter: blur(4px);
+      z-index: 5;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .overlay b {
+      display: block;
+      color: var(--text);
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .side-stack {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 18px;
+    }
+
+    .mini {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .045);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .mini small {
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+    }
+
+    .mini b {
+      display: block;
+      margin-top: 6px;
+      font-size: 20px;
+      letter-spacing: -.04em;
+    }
+
+    .screw-panel {
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screw-list {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .screw-card {
+      width: 100%;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255, 255, 255, .045);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+
+    .screw-card:hover,
+    .screw-card.active {
+      border-color: rgba(57, 215, 255, .5);
+      background: rgba(57, 215, 255, .08);
+      transform: translateY(-1px);
+    }
+
+    .screw-card h3 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.04em;
+    }
+
+    .screw-card p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .compact-exception {
+      padding: 18px;
+    }
+
+    .exception-box {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .04);
+      padding: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .exception-box b {
+      color: var(--text);
+    }
+
+    .empty {
+      color: var(--muted);
+      border: 1px dashed var(--line2);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    /* RGB PAGE */
+    .rgb-layout {
+      min-height: calc(100vh - 138px);
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+    }
+
+    .rgb-screen {
+      min-height: 520px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .rgb-placeholder {
+      text-align: center;
+      color: var(--muted);
+      max-width: 560px;
+      padding: 30px;
+    }
+
+    .rgb-placeholder .big {
+      font-size: 58px;
+      margin-bottom: 12px;
+    }
+
+    #rgbImage {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .rgb-panel {
+      padding: 22px;
+    }
+
+    .rgb-panel .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    /* MODALS */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(0, 0, 0, .62);
+      backdrop-filter: blur(8px);
+      z-index: 80;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+      animation: fadeUp .2s ease both;
+    }
+
+    .modal {
+      width: min(660px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      padding: 28px;
+      border-radius: 26px;
+      background: linear-gradient(180deg, #142234, #0d1622);
+      border: 1px solid var(--line2);
+      box-shadow: 0 30px 100px rgba(0, 0, 0, .5);
+    }
+
+    .modal h2 {
+      margin: 12px 0 8px;
+      font-size: 30px;
+      letter-spacing: -.06em;
+    }
+
+    .modal p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .cell {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .045);
+      border-radius: 16px;
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .cell span {
+      display: block;
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      margin-bottom: 6px;
+    }
+
+    .cell b {
+      display: block;
+      word-break: break-word;
+      font-size: 16px;
+    }
+
+    .desc-box {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .04);
+      border-radius: 16px;
+      padding: 14px;
+      color: var(--muted);
+    }
+
+    .raw-log {
+      max-height: 170px;
+      overflow: auto;
+      background: rgba(0, 0, 0, .25);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #c8d4e2;
+      white-space: pre-wrap;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: #101a26;
+      border: 1px solid var(--line2);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .35);
+      transform: translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s ease;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width:1180px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        overflow: visible;
+      }
+
+      .topbar {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding: 18px;
+      }
+
+      .nav-tabs {
+        position: static;
+        transform: none;
+        order: 3;
+        width: 100%;
+      }
+
+      .brand,
+      .status-group {
+        min-width: 0;
+      }
+
+      .home-shell,
+      .scan-layout,
+      .rgb-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: 0;
+      }
+
+      .hero-card {
+        min-height: 620px;
+        padding: 42px 26px;
+      }
+
+      .hero-content h2 {
+        font-size: 42px;
+      }
+
+      .hero-bg-animation {
+        right: -28%;
+        width: 900px;
+        opacity: .16;
+      }
+
+      .plot-wrap {
+        height: 620px;
+        flex: none;
+      }
+
+      .page {
+        overflow: visible;
+      }
+    }
+
+    /* ── WebXR VR Button ───────────────────────────── */
+    #vr-enter-btn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 9999;
+      display: none;
+      /* 기기가 VR 지원 시에만 표시됨 */
+      align-items: center;
+      gap: 10px;
+      padding: 14px 22px;
+      border: 1px solid rgba(57, 215, 255, .45);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(57, 215, 255, .18), rgba(77, 141, 255, .12));
+      backdrop-filter: blur(14px);
+      color: #c6f4ff;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      cursor: pointer;
+      box-shadow: 0 0 32px rgba(57, 215, 255, .18), 0 8px 28px rgba(0, 0, 0, .35);
+      transition: .2s ease;
+    }
+
+    #vr-enter-btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(57, 215, 255, .75);
+      box-shadow: 0 0 44px rgba(57, 215, 255, .28), 0 10px 32px rgba(0, 0, 0, .4);
+    }
+
+    #vr-enter-btn svg {
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">JG</div>
+      <div>
+        <h1>JoinGo</h1>
+        <p>SMART SCREW INSPECTION</p>
+      </div>
+    </div>
+    <nav class="nav-tabs">
+      <button type="button" class="tab-btn active" data-page="home" onclick="showPage('home')">메인</button>
+      <button type="button" class="tab-btn" data-page="scan3d" onclick="showPage('scan3d')">3D Scan 확인</button>
+      <button type="button" class="tab-btn" data-page="rgb" onclick="showPage('rgb')">RGB 영상 확인</button>
+    </nav>
+    <div class="status-group">
+      <span id="dbPill" class="pill warn"><span class="pulse"></span>DB 연결 대기</span>
+      <span id="linePill" class="pill warn"><span class="pulse"></span>작업대 대기</span>
+      <span id="exceptionPill" class="pill ok"><span class="pulse"></span>예외 없음</span>
+    </div>
+  </header>
+
+  <main class="app">
+    <section id="home" class="page active">
+      <div class="home-shell">
+        <div class="card hero-card">
+          <div class="hero-bg-animation" aria-hidden="true">
+            <svg class="screw-svg" viewBox="0 0 820 620" role="img" aria-label="나사 상태 순환 애니메이션">
+              <defs>
+                <linearGradient id="screwMetalV4" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#f6fbff" />
+                  <stop offset="0.48" stop-color="#8fa1b1" />
+                  <stop offset="1" stop-color="#dfeaf2" />
+                </linearGradient>
+                <linearGradient id="screwShadowV4" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#9eafbd" />
+                  <stop offset="1" stop-color="#536879" />
+                </linearGradient>
+                <linearGradient id="bubbleNormalV4" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="rgba(85,224,138,.88)" />
+                  <stop offset="1" stop-color="rgba(18,104,64,.78)" />
+                </linearGradient>
+                <linearGradient id="bubbleDefectV4" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="rgba(255,93,108,.9)" />
+                  <stop offset="1" stop-color="rgba(118,35,48,.78)" />
+                </linearGradient>
+                <linearGradient id="bubbleWorkingV4" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="rgba(255,209,102,.9)" />
+                  <stop offset="1" stop-color="rgba(116,81,23,.78)" />
+                </linearGradient>
+              </defs>
+
+              <g opacity=".28">
+                <path d="M90 92 H730" stroke="rgba(57,215,255,.18)" stroke-width="2" stroke-dasharray="10 18" />
+                <path d="M90 308 H730" stroke="rgba(57,215,255,.15)" stroke-width="2" stroke-dasharray="10 18" />
+                <path d="M90 524 H730" stroke="rgba(57,215,255,.12)" stroke-width="2" stroke-dasharray="10 18" />
+              </g>
+
+              <g class="screw-node" style="--delay:0s" transform="translate(210 214)">
+                <circle class="status-orbit" cx="0" cy="44" r="76" fill="none" stroke="#ff5d6c" stroke-width="5"
+                  stroke-dasharray="24 16" opacity=".58" />
+                <g class="screw-motion">
+                  <g class="screw-rotor">
+                    <circle cx="0" cy="0" r="48" fill="url(#screwMetalV4)" stroke="rgba(255,255,255,.92)"
+                      stroke-width="4" />
+                    <path d="M-28 0 H28" stroke="#203246" stroke-width="13" stroke-linecap="round" />
+                    <path d="M0 -28 V28" stroke="#203246" stroke-width="13" stroke-linecap="round" />
+                    <circle cx="0" cy="0" r="18" fill="rgba(255,255,255,.16)" />
+                  </g>
+                  <g transform="translate(0 48)">
+                    <rect x="-22" y="0" width="44" height="92" rx="14" fill="url(#screwShadowV4)" opacity=".9" />
+                    <path class="thread-line" d="M-33 18 C-12 2 12 34 33 18" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                    <path class="thread-line" d="M-33 46 C-12 30 12 62 33 46" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                    <path class="thread-line" d="M-33 74 C-12 58 12 90 33 74" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                  </g>
+                </g>
+                <g class="bubble defect" transform="translate(-74 -118)">
+                  <rect x="0" y="0" width="148" height="48" rx="18" fill="url(#bubbleDefectV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M66 48 L78 64 L92 48" fill="rgba(255,93,108,.78)" />
+                  <text x="74" y="30" text-anchor="middle" fill="#fff" font-size="19" font-weight="900">불량감지</text>
+                </g>
+                <g class="bubble working" transform="translate(-68 -118)">
+                  <rect x="0" y="0" width="136" height="48" rx="18" fill="url(#bubbleWorkingV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M58 48 L70 64 L84 48" fill="rgba(255,209,102,.78)" />
+                  <text x="68" y="30" text-anchor="middle" fill="#101820" font-size="19" font-weight="900">조치중</text>
+                </g>
+                <g class="bubble normal" transform="translate(-82 -118)">
+                  <rect x="0" y="0" width="164" height="48" rx="18" fill="url(#bubbleNormalV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M74 48 L86 64 L100 48" fill="rgba(85,224,138,.78)" />
+                  <text x="82" y="30" text-anchor="middle" fill="#06130d" font-size="18" font-weight="900">정상체결</text>
+                </g>
+              </g>
+
+              <g class="screw-node" style="--delay:-2.15s" transform="translate(610 214)">
+                <circle class="status-orbit" cx="0" cy="44" r="76" fill="none" stroke="#ff5d6c" stroke-width="5"
+                  stroke-dasharray="24 16" opacity=".58" />
+                <g class="screw-motion">
+                  <g class="screw-rotor">
+                    <circle cx="0" cy="0" r="48" fill="url(#screwMetalV4)" stroke="rgba(255,255,255,.92)"
+                      stroke-width="4" />
+                    <path d="M-28 0 H28" stroke="#203246" stroke-width="13" stroke-linecap="round" />
+                    <path d="M0 -28 V28" stroke="#203246" stroke-width="13" stroke-linecap="round" />
+                    <circle cx="0" cy="0" r="18" fill="rgba(255,255,255,.16)" />
+                  </g>
+                  <g transform="translate(0 48)">
+                    <rect x="-22" y="0" width="44" height="92" rx="14" fill="url(#screwShadowV4)" opacity=".9" />
+                    <path class="thread-line" d="M-33 18 C-12 2 12 34 33 18" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                    <path class="thread-line" d="M-33 46 C-12 30 12 62 33 46" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                    <path class="thread-line" d="M-33 74 C-12 58 12 90 33 74" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                  </g>
+                </g>
+                <g class="bubble defect" transform="translate(-74 -118)">
+                  <rect x="0" y="0" width="148" height="48" rx="18" fill="url(#bubbleDefectV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M66 48 L78 64 L92 48" fill="rgba(255,93,108,.78)" /><text x="74" y="30" text-anchor="middle"
+                    fill="#fff" font-size="19" font-weight="900">불량감지</text>
+                </g>
+                <g class="bubble working" transform="translate(-68 -118)">
+                  <rect x="0" y="0" width="136" height="48" rx="18" fill="url(#bubbleWorkingV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M58 48 L70 64 L84 48" fill="rgba(255,209,102,.78)" /><text x="68" y="30" text-anchor="middle"
+                    fill="#101820" font-size="19" font-weight="900">조치중</text>
+                </g>
+                <g class="bubble normal" transform="translate(-82 -118)">
+                  <rect x="0" y="0" width="164" height="48" rx="18" fill="url(#bubbleNormalV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M74 48 L86 64 L100 48" fill="rgba(85,224,138,.78)" /><text x="82" y="30" text-anchor="middle"
+                    fill="#06130d" font-size="18" font-weight="900">정상체결</text>
+                </g>
+              </g>
+
+              <g class="screw-node" style="--delay:-4.35s" transform="translate(210 458)">
+                <circle class="status-orbit" cx="0" cy="44" r="76" fill="none" stroke="#ff5d6c" stroke-width="5"
+                  stroke-dasharray="24 16" opacity=".58" />
+                <g class="screw-motion">
+                  <g class="screw-rotor">
+                    <circle cx="0" cy="0" r="48" fill="url(#screwMetalV4)" stroke="rgba(255,255,255,.92)"
+                      stroke-width="4" />
+                    <path d="M-28 0 H28" stroke="#203246" stroke-width="13" stroke-linecap="round" />
+                    <path d="M0 -28 V28" stroke="#203246" stroke-width="13" stroke-linecap="round" />
+                    <circle cx="0" cy="0" r="18" fill="rgba(255,255,255,.16)" />
+                  </g>
+                  <g transform="translate(0 48)">
+                    <rect x="-22" y="0" width="44" height="92" rx="14" fill="url(#screwShadowV4)" opacity=".9" />
+                    <path class="thread-line" d="M-33 18 C-12 2 12 34 33 18" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                    <path class="thread-line" d="M-33 46 C-12 30 12 62 33 46" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                    <path class="thread-line" d="M-33 74 C-12 58 12 90 33 74" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                  </g>
+                </g>
+                <g class="bubble defect" transform="translate(-74 -118)">
+                  <rect x="0" y="0" width="148" height="48" rx="18" fill="url(#bubbleDefectV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M66 48 L78 64 L92 48" fill="rgba(255,93,108,.78)" /><text x="74" y="30" text-anchor="middle"
+                    fill="#fff" font-size="19" font-weight="900">불량감지</text>
+                </g>
+                <g class="bubble working" transform="translate(-68 -118)">
+                  <rect x="0" y="0" width="136" height="48" rx="18" fill="url(#bubbleWorkingV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M58 48 L70 64 L84 48" fill="rgba(255,209,102,.78)" /><text x="68" y="30" text-anchor="middle"
+                    fill="#101820" font-size="19" font-weight="900">조치중</text>
+                </g>
+                <g class="bubble normal" transform="translate(-82 -118)">
+                  <rect x="0" y="0" width="164" height="48" rx="18" fill="url(#bubbleNormalV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M74 48 L86 64 L100 48" fill="rgba(85,224,138,.78)" /><text x="82" y="30" text-anchor="middle"
+                    fill="#06130d" font-size="18" font-weight="900">정상체결</text>
+                </g>
+              </g>
+
+              <g class="screw-node" style="--delay:-6.55s" transform="translate(610 458)">
+                <circle class="status-orbit" cx="0" cy="44" r="76" fill="none" stroke="#ff5d6c" stroke-width="5"
+                  stroke-dasharray="24 16" opacity=".58" />
+                <g class="screw-motion">
+                  <g class="screw-rotor">
+                    <circle cx="0" cy="0" r="48" fill="url(#screwMetalV4)" stroke="rgba(255,255,255,.92)"
+                      stroke-width="4" />
+                    <path d="M-28 0 H28" stroke="#203246" stroke-width="13" stroke-linecap="round" />
+                    <path d="M0 -28 V28" stroke="#203246" stroke-width="13" stroke-linecap="round" />
+                    <circle cx="0" cy="0" r="18" fill="rgba(255,255,255,.16)" />
+                  </g>
+                  <g transform="translate(0 48)">
+                    <rect x="-22" y="0" width="44" height="92" rx="14" fill="url(#screwShadowV4)" opacity=".9" />
+                    <path class="thread-line" d="M-33 18 C-12 2 12 34 33 18" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                    <path class="thread-line" d="M-33 46 C-12 30 12 62 33 46" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                    <path class="thread-line" d="M-33 74 C-12 58 12 90 33 74" stroke="#203246" stroke-width="4.6"
+                      fill="none" stroke-linecap="round" />
+                  </g>
+                </g>
+                <g class="bubble defect" transform="translate(-74 -118)">
+                  <rect x="0" y="0" width="148" height="48" rx="18" fill="url(#bubbleDefectV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M66 48 L78 64 L92 48" fill="rgba(255,93,108,.78)" /><text x="74" y="30" text-anchor="middle"
+                    fill="#fff" font-size="19" font-weight="900">불량감지</text>
+                </g>
+                <g class="bubble working" transform="translate(-68 -118)">
+                  <rect x="0" y="0" width="136" height="48" rx="18" fill="url(#bubbleWorkingV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M58 48 L70 64 L84 48" fill="rgba(255,209,102,.78)" /><text x="68" y="30" text-anchor="middle"
+                    fill="#101820" font-size="19" font-weight="900">조치중</text>
+                </g>
+                <g class="bubble normal" transform="translate(-82 -118)">
+                  <rect x="0" y="0" width="164" height="48" rx="18" fill="url(#bubbleNormalV4)"
+                    stroke="rgba(255,255,255,.32)" />
+                  <path d="M74 48 L86 64 L100 48" fill="rgba(85,224,138,.78)" /><text x="82" y="30" text-anchor="middle"
+                    fill="#06130d" font-size="18" font-weight="900">정상체결</text>
+                </g>
+              </g>
+            </svg>
+          </div>
+          <div class="hero-content">
+            <span class="eyebrow">JOIN · INSPECT · RESPOND</span>
+            <h2>체결 공정의 점검,<br>대응 자동화 시스템 : JoinGo</h2>
+            <p>JoinGo는 작업대별 3D 스캔 결과와 RGB 영상을 분리해 확인하고, 나사 단위의 정상·불량 상태와 상세 로그를 직관적으로 추적하는 체결 품질 관제 웹입니다. 상단 중앙 탭에서 필요한
+              화면만 선택해 확인할 수 있습니다.</p>
+            <div class="home-tab-hint"><span></span>상단 중앙 탭에서 3D Scan 또는 RGB 영상을 선택하세요</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="scan3d" class="page">
+      <div class="scan-layout">
+        <div class="card plot-card">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">3D Scan 검사 화면</h2>
+              <p class="section-desc">viewer_06의 <b>live_scan/workstations</b> 구조를 기준으로 작업대별 3D 결과를 선택 표시합니다.</p>
+            </div>
+            <span id="viewerBadge" class="tag blue">viewer_06 integrated</span>
+          </div>
+          <div class="toolbar">
+            <select id="sectionSelect" class="select" title="작업대 선택"></select>
+            <select id="pointLimitSelect" class="select" title="배경 포인트 수">
+              <option value="0">마커만</option>
+              <option value="10000" selected>배경 1만점</option>
+              <option value="20000">배경 2만점</option>
+              <option value="30000">배경 3만점</option>
+              <option value="40000">배경 4만점</option>
+              <option value="50000">배경 5만점</option>
+            </select>
+            <button id="btnReload" class="btn primary">선택 작업대 다시 로드</button>
+            <button id="btnBackgroundReload" class="btn">배경 다시 로드</button>
+            <button class="btn" onclick="showPage('home')">메인으로</button>
+          </div>
+          <div class="plot-wrap">
+            <div id="plot"></div>
+            <div id="plotOverlay" class="overlay">
+              <div><b>작업대 데이터 대기</b>
+                <p>live_scan/workstations 경로에 데이터가 들어오면 3D 검사 화면을 표시합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="side-stack">
+          <div class="card">
+            <div class="summary-grid">
+              <div class="mini"><small>WORKSTATION</small><b id="mSection">-</b></div>
+              <div class="mini"><small>SCREWS</small><b id="mTotal">0</b></div>
+              <div class="mini"><small>DEFECT</small><b id="mDefect">0</b></div>
+              <div class="mini"><small>UPDATED</small><b id="mTime">-</b></div>
+            </div>
+          </div>
+          <div class="card screw-panel">
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">나사 선택</h2>
+                <p class="section-desc">카드를 누르거나 3D 마커를 클릭하면 상세 로그가 팝업으로 열립니다.</p>
+              </div>
+              <span id="screwCount" class="tag warn">0개</span>
+            </div>
+            <div id="screwList" class="screw-list"></div>
+          </div>
+          <div class="card compact-exception">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+              <b>예외 상황</b><span id="exceptionBadge" class="tag ok">NORMAL</span>
+            </div>
+            <div id="exceptionPanel" class="exception-box">현재 활성 예외 상황이 없습니다.</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="rgb" class="page">
+      <div class="rgb-layout">
+        <div class="card rgb-screen">
+          <img id="rgbImage" alt="RGB 실시간 영상" />
+          <div id="rgbPlaceholder" class="rgb-placeholder">
+            <div class="big">📷</div>
+            <h2 class="section-title">RGB 영상 확인 탭</h2>
+            <p class="section-desc">일단 탭과 화면 영역만 만들어두었습니다. 나중에 <b>live_scan/rgb_stream/url</b>에 MJPEG 또는 영상 스트림 URL을 넣으면
+              이 영역에 표시할 수 있습니다.</p>
+          </div>
+        </div>
+        <div class="card rgb-panel">
+          <h2 class="section-title">RGB Stream 설정</h2>
+          <p class="section-desc">Firebase에는 영상 자체가 아니라 스트림 URL만 저장하는 구조를 권장합니다.</p>
+          <div class="stack">
+            <label class="section-desc">DB Stream URL</label>
+            <input id="rgbUrlInput" class="input" placeholder="예: http://Ubuntu_IP:8080/rgb" />
+            <button id="btnApplyRgb" class="btn primary">입력 URL로 미리보기</button>
+            <button id="btnReloadRgb" class="btn">DB URL 다시 읽기</button>
+            <div class="desc-box">
+              추천 DB 경로<br>
+              <b style="font-family:var(--mono);">live_scan/rgb_stream/url</b>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="screwModal" class="modal-backdrop">
+    <div class="modal">
+      <span id="screwModalTag" class="tag blue">SCREW</span>
+      <h2 id="screwModalTitle">나사 상세 로그</h2>
+      <p id="screwModalDesc">선택된 나사의 좌표, 상태, 원본 로그를 확인합니다.</p>
+      <div id="screwModalGrid" class="detail-grid"></div>
+      <div class="desc-box" id="screwModalMessage"></div>
+      <h3 style="margin:18px 0 8px;">Raw Log</h3>
+      <pre id="screwRawLog" class="raw-log"></pre>
+      <div class="modal-actions">
+        <button id="btnScrewResolve" class="btn green">해결 완료로 변경</button>
+        <button id="btnCloseScrew" class="btn">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="exceptionModal" class="modal-backdrop">
+    <div class="modal">
+      <span id="modalType" class="tag danger">EXCEPTION</span>
+      <h2 id="modalTitle">예외 상황 발생</h2>
+      <p id="modalMessage">작업 상태를 확인하세요.</p>
+      <div class="detail-grid">
+        <div class="cell"><span>라인/작업대</span><b id="modalLine">-</b></div>
+        <div class="cell"><span>발생 시각</span><b id="modalTime">-</b></div>
+      </div>
+      <div class="modal-actions">
+        <button id="btnResume" class="btn green">조치 완료 · 재개 신호 전송</button>
+        <button id="btnCloseModal" class="btn">팝업만 닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCCY5tdlAhNhhlxCwdXHOTOrnyGWGFz6hc",
+      authDomain: "rokey-d-2-4c32a.firebaseapp.com",
+      databaseURL: "https://rokey-d-2-4c32a-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "rokey-d-2-4c32a",
+      storageBucket: "rokey-d-2-4c32a.firebasestorage.app",
+      messagingSenderId: "97777845306",
+      appId: "1:97777845306:web:6a3122b918c1f3651c2103",
+      measurementId: "G-3L4G46B6H8"
+    };
+
+    const PATHS = {
+      workstations: "live_scan/workstations",
+      rgbStream: "live_scan/rgb_stream",
+      exceptionCurrent: "exceptionstatus/current",
+      exceptionHistory: "exceptionstatus/history",
+      exceptionCommand: "exceptioncommand"
+    };
+
+    let db = null;
+    let allData = {};
+    let currentPage = "home";
+    let currentSection = null;
+    let selectedScrewKey = null;
+    let selectedException = null;
+    let selectedScrewForModal = null;
+    let bgCache = { url: null, data: null };
+    let lastRenderKey = "";
+    let renderTimer = null;
+
+    const $ = (id) => document.getElementById(id);
+    const exceptionLabels = { EMERGENCY_STOP: "비상정지", PAUSE: "일시정지", SAFETY_STOP: "안전정지(외부충돌)" };
+    const exceptionMessages = {
+      EMERGENCY_STOP: "비상정지 신호가 감지되었습니다. 설비와 작업자 안전 상태를 확인한 뒤 재개 신호를 전송하세요.",
+      PAUSE: "공정 일시정지 신호가 감지되었습니다. 정지 원인을 확인하고 작업 조건이 안정되면 재개하세요.",
+      SAFETY_STOP: "외부충돌 또는 안전 인터락에 의한 안전정지가 감지되었습니다. 충돌 원인과 작업 공간을 점검한 뒤 재개하세요."
+    };
+
+    function toast(message) {
+      const box = $("toast");
+      box.textContent = message;
+      box.classList.add("show");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => box.classList.remove("show"), 2600);
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, (m) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;"
+      }[m]));
+    }
+
+    function timeText(value) {
+      if (!value) return "-";
+      if (typeof value === "string") return value;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    function normalizeStatusValue(rawStatus) {
+      const value = String(rawStatus ?? "").trim().toLowerCase();
+
+      if (rawStatus === true || ["normal", "ok", "good", "pass", "passed", "resolved"].includes(value)) {
+        return "normal";
+      }
+
+      if (rawStatus === false || ["defect", "defective", "failed", "fail", "ng", "abnormal", "error"].includes(value)) {
+        return "defect";
+      }
+
+      return "defect";
+    }
+
+    function isDefectStatus(status) {
+      return normalizeStatusValue(status) === "defect";
+    }
+
+    function showPage(pageName) {
+      currentPage = pageName;
+      document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === pageName));
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.page === pageName));
+      if (pageName === "scan3d") {
+        lastRenderKey = "";
+        setTimeout(() => scheduleRender(false), 50);
+      }
+    }
+    window.showPage = showPage;
+
+    document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => showPage(btn.dataset.page)));
+
+    function setDbMode(mode, message) {
+      const pill = $("dbPill");
+      if (mode === "ok") { pill.className = "pill ok"; pill.innerHTML = `<span class="pulse"></span>Firebase 연결됨`; }
+      else if (mode === "error") { pill.className = "pill danger"; pill.innerHTML = `<span class="pulse"></span>DB 오류`; }
+      else { pill.className = "pill warn"; pill.innerHTML = `<span class="pulse"></span>DB 연결 대기`; }
+      if (message) toast(message);
+    }
+
+    function initFirebase() {
+      try {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        setDbMode("ok", "Firebase에 연결했습니다.");
+        subscribeWorkstations();
+        subscribeRgbStream();
+        subscribeException();
+      } catch (error) {
+        console.error(error);
+        setDbMode("error", `Firebase 초기화 실패: ${error.message}`);
+      }
+    }
+
+    function subscribeWorkstations() {
+      db.ref(PATHS.workstations).on("value", (snapshot) => {
+        allData = snapshot.val() || {};
+        const keys = sortSectionKeys(Object.keys(allData));
+        updateSectionDropdown(keys);
+        if (!keys.length) {
+          showOverlay("작업대 데이터 없음", "live_scan/workstations 경로에 아직 데이터가 없습니다.");
+          renderScrewList({});
+          renderHomeSummary(null, {});
+          return;
+        }
+        if (!currentSection || !allData[currentSection]) currentSection = keys[keys.length - 1];
+        $("sectionSelect").value = currentSection;
+        const data = allData[currentSection];
+        const screws = normalizeScrews(data.screws || data.markers || {});
+        renderHomeSummary(data, screws);
+        renderSummary(data, screws);
+        renderScrewList(screws);
+        if (currentPage === "scan3d") scheduleRender(false);
+
+        // ── VR 실시간 자동 갱신 ──────────────────────────────────────
+        // xrSession은 VR 스크립트 블록의 클로저 내부에 있으므로
+        // 외부에서 접근 가능한 전역 플래그를 통해 VR 활성 여부를 확인합니다.
+        if (window._vrActive) {
+          // 마커 위치/상태 즉시 반영
+          if (typeof updateScrews === 'function') updateScrews();
+          // 정보 패널 (나사 수 / 불량 수 / 날짜) 즉시 반영
+          if (typeof buildVRInfoPanel === 'function') buildVRInfoPanel();
+          // 작업대 목록 버튼 하이라이트 동기화
+          if (typeof buildVRUI === 'function') buildVRUI();
+        }
+      }, (error) => setDbMode("error", `작업대 데이터 수신 실패: ${error.message}`));
+    }
+
+    function sortSectionKeys(keys) {
+      return [...keys].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    }
+
+    function updateSectionDropdown(keys) {
+      const select = $("sectionSelect");
+      const old = select.value;
+      select.innerHTML = "";
+      keys.forEach((key) => {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = allData[key]?.section_name || key;
+        select.appendChild(opt);
+      });
+      if (keys.includes(old)) select.value = old;
+    }
+
+    function scheduleRender(forceBgReload = false) {
+      if (currentPage !== "scan3d") return;
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(() => renderCurrentSection(forceBgReload), 160);
+    }
+
+    async function renderCurrentSection(forceBgReload = false) {
+      const data = allData[currentSection];
+      if (!data) return;
+      const limit = Number($("pointLimitSelect").value || 10000);
+      const bgUrl = data.background_url || data.storage_refs?.background_url || "";
+      const screws = normalizeScrews(data.screws || data.markers || {});
+      const fingerprint = JSON.stringify({ section: currentSection, bgUrl, limit, screws: Object.entries(screws).map(([k, v]) => [k, v.status, v.position]) });
+      if (!forceBgReload && fingerprint === lastRenderKey) return;
+      lastRenderKey = fingerprint;
+      renderSummary(data, screws);
+      renderScrewList(screws);
+      try {
+        let bgData = null;
+        if (limit > 0 && bgUrl) bgData = await getBackground(bgUrl, forceBgReload);
+        renderPlot(data, screws, bgData, limit);
+        hideOverlay();
+      } catch (error) {
+        console.error(error);
+        renderPlot(data, screws, null, limit);
+        showOverlay("배경 로드 실패", "배경 Point Cloud를 불러오지 못했습니다. 마커만 표시합니다.");
+      }
+    }
+
+    function normalizeScrews(raw) {
+      if (Array.isArray(raw)) {
+        const obj = {};
+        raw.forEach((v, i) => obj[`screw_${String(i).padStart(2, "0")}`] = normalizeScrew(v, i));
+        return obj;
+      }
+      const obj = {};
+      Object.entries(raw || {}).forEach(([key, value], idx) => { obj[key] = normalizeScrew(value, idx); });
+      return obj;
+    }
+
+    function normalizeScrew(info = {}, idx) {
+      const pos = info?.position || info || {};
+      const status = normalizeStatusValue(info?.status);
+      return {
+        ...info,
+        status,
+        position: {
+          x: Number(pos.x ?? info.x ?? 0),
+          y: Number(pos.y ?? info.y ?? 0),
+          z: Number(pos.z ?? info.z ?? 0),
+          frame_id: pos.frame_id || info.frame_id || "base_link"
+        },
+        screw_id: info?.screw_id || info?.id || `screw_${idx}`,
+        time: info?.time || info?.updated_at || "-"
+      };
+    }
+
+    async function getBackground(url, forceReload = false) {
+      if (!forceReload && bgCache.url === url && bgCache.data) return bgCache.data;
+      window.latestBackground = null;
+      const oldScript = document.getElementById("dynamic-bg-script");
+      if (oldScript) oldScript.remove();
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.id = "dynamic-bg-script";
+        script.src = url + (forceReload ? `${url.includes("?") ? "&" : "?"}_=${Date.now()}` : "");
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("background script load failed"));
+        document.head.appendChild(script);
+      });
+      bgCache = { url, data: window.latestBackground };
+      return bgCache.data;
+    }
+
+    function sampleBackground(bg, limit) {
+      if (!bg || !bg.x || !bg.y || !bg.z || limit <= 0) return null;
+      const n = Math.min(bg.x.length, bg.y.length, bg.z.length);
+      const step = Math.max(1, Math.ceil(n / limit));
+      const x = [], y = [], z = [], colors = [];
+      const scale = Math.abs(Number(bg.x[0] || 0)) < 10 ? 1000 : 1;
+      for (let i = 0; i < n; i += step) {
+        x.push(Number(bg.x[i]) * scale);
+        y.push(Number(bg.y[i]) * scale);
+        z.push(Number(bg.z[i]) * scale);
+        if (bg.colors && bg.colors[i] !== undefined) colors.push(bg.colors[i]);
+      }
+      return { x, y, z, colors: colors.length ? colors : "rgba(155,170,190,.65)", scale };
+    }
+
+    function markerScale(screws) {
+      const values = Object.values(screws || {});
+      const first = values.find(v => Number.isFinite(v?.position?.x));
+      if (!first) return 1;
+      return Math.abs(first.position.x) < 10 ? 1000 : 1;
+    }
+
+    function renderPlot(sectionData, screws, bgData, limit) {
+      const sampled = sampleBackground(bgData, limit);
+      const traces = [];
+      if (sampled) {
+        traces.push({
+          type: "scatter3d", mode: "markers", x: sampled.x, y: sampled.y, z: sampled.z,
+          marker: { size: 1.5, color: sampled.colors, opacity: .92 }, name: "작업대 배경 Point Cloud", hoverinfo: "skip"
+        });
+      }
+      const sScale = markerScale(screws);
+      Object.entries(screws).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).forEach(([key, info]) => {
+        const n = getScrewNumber(key);
+        const isNormal = info.status === "normal";
+        const color = isNormal ? "#27d97f" : "#ff4f4f";
+        traces.push({
+          type: "scatter3d", mode: "markers+text",
+          x: [info.position.x * sScale], y: [info.position.y * sScale], z: [info.position.z * sScale],
+          text: [`<b>나사 ${n}</b>`], textposition: "top center",
+          textfont: { color, size: 22, family: "Arial Black, sans-serif" },
+          marker: { size: 16, color, symbol: "circle", line: { color: "#111", width: 2 } },
+          name: `나사 ${n} (${isNormal ? "정상" : "불량"})`, customdata: [key],
+          hovertemplate: `나사 ${n}<br>상태: ${isNormal ? "정상" : "불량"}<br>X: %{x:.2f}<br>Y: %{y:.2f}<br>Z: %{z:.2f}<extra></extra>`
+        });
+      });
+      const title = `${sectionData.section_name || currentSection} · ${sectionData.timestamp || ""}`;
+      const layout = {
+        title: { text: title, font: { color: "#edf3fa", size: 18 } },
+        paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+        margin: { l: 0, r: 0, b: 0, t: 48 },
+        legend: { x: .78, y: .92, bgcolor: "rgba(7,11,16,.36)", font: { color: "#edf3fa" } },
+        scene: { aspectmode: "data", xaxis: axisStyle("X (mm)"), yaxis: axisStyle("Y (mm)"), zaxis: axisStyle("Z (mm)"), camera: { eye: { x: 1.45, y: 1.45, z: 1.12 } }, bgcolor: "rgba(0,0,0,0)" }
+      };
+      const config = { responsive: true, displaylogo: false, scrollZoom: true };
+      Plotly.react("plot", traces, layout, config).then(() => {
+        const plot = $("plot");
+        plot.removeAllListeners?.("plotly_click");
+        plot.on?.("plotly_click", (ev) => {
+          const key = ev.points?.[0]?.customdata;
+          if (key && screws[key]) openScrewModal(key, screws[key]);
+        });
+      });
+    }
+
+    function axisStyle(title) {
+      return { title: { text: title, font: { color: "#9aa8b7" } }, tickfont: { color: "#9aa8b7" }, gridcolor: "rgba(255,255,255,.12)", zerolinecolor: "rgba(255,255,255,.22)", backgroundcolor: "rgba(255,255,255,.03)" };
+    }
+
+    function renderHomeSummary(data, screws) {
+      // 메인 화면은 의도적으로 지표 카드를 제거했습니다.
+      // DB 수신 시에도 메인 화면은 로고/문구/애니메이션 중심으로 유지합니다.
+    }
+
+    function renderSummary(data, screws) {
+      const values = Object.values(screws || {});
+      const total = values.length;
+      const defect = values.filter(v => isDefectStatus(v.status)).length;
+      $("mSection").textContent = data?.section_name || currentSection || "-";
+      $("mTotal").textContent = total;
+      $("mDefect").textContent = defect;
+      $("mTime").textContent = data?.timestamp || timeText(data?.time);
+      $("screwCount").textContent = `${total}개`;
+      const pill = $("linePill");
+      pill.className = "pill " + (defect ? "danger" : "ok");
+      pill.innerHTML = `<span class="pulse"></span>${defect ? `불량 ${defect}개` : "전체 정상"}`;
+    }
+
+    function renderScrewList(screws) {
+      const list = $("screwList");
+      const entries = Object.entries(screws || {}).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+      if (!entries.length) {
+        list.innerHTML = `<div class="empty">선택 작업대에 나사 데이터가 없습니다.</div>`;
+        return;
+      }
+      list.innerHTML = entries.map(([key, info]) => {
+        const n = getScrewNumber(key);
+        const isNormal = info.status === "normal";
+        return `<button class="screw-card ${selectedScrewKey === key ? "active" : ""}" data-key="${esc(key)}">
+          <div><h3>나사 ${n}</h3><p>${esc(info.screw_id || key)}<br>${info.time ? esc(timeText(info.time)) : "검사 시간 없음"}</p></div>
+          <span class="tag ${isNormal ? "ok" : "danger"}">${isNormal ? "정상" : "불량"}</span>
+        </button>`;
+      }).join("");
+      list.querySelectorAll(".screw-card").forEach(btn => {
+        btn.addEventListener("click", () => {
+          selectedScrewKey = btn.dataset.key;
+          renderScrewList(screws);
+          openScrewModal(selectedScrewKey, screws[selectedScrewKey]);
+        });
+      });
+    }
+
+    function getScrewNumber(key) {
+      const m = String(key).match(/(\d+)/g);
+      if (!m) return key;
+      return Number(m[m.length - 1]) + 1;
+    }
+
+    function openScrewModal(key, info) {
+      if (!info) return;
+      selectedScrewKey = key;
+      selectedScrewForModal = { key, ...info };
+      const n = getScrewNumber(key);
+      const isNormal = info.status === "normal";
+      $("screwModalTag").className = `tag ${isNormal ? "ok" : "danger"}`;
+      $("screwModalTag").textContent = isNormal ? "정상 체결" : "불량 단차";
+      $("screwModalTitle").textContent = `나사 ${n} 상세 로그`;
+      $("screwModalDesc").textContent = `${currentSection || "선택 작업대"} 기준 검사 결과입니다.`;
+      $("screwModalGrid").innerHTML = `
+        <div class="cell"><span>나사 KEY</span><b>${esc(key)}</b></div>
+        <div class="cell"><span>나사 ID</span><b>${esc(info.screw_id || info.id || "-")}</b></div>
+        <div class="cell"><span>X</span><b>${fmt(info.position?.x)}</b></div>
+        <div class="cell"><span>Y</span><b>${fmt(info.position?.y)}</b></div>
+        <div class="cell"><span>Z</span><b>${fmt(info.position?.z)}</b></div>
+        <div class="cell"><span>FRAME</span><b>${esc(info.position?.frame_id || "base_link")}</b></div>
+      `;
+      $("screwModalMessage").innerHTML = isNormal
+        ? "현재 정상 체결 상태입니다."
+        : "단차 또는 체결 이상이 감지되었습니다. 조치가 끝나면 아래 버튼으로 DB 상태를 <b>normal</b>로 변경할 수 있습니다.";
+      $("screwRawLog").textContent = JSON.stringify({ key, ...info }, null, 2);
+      $("btnScrewResolve").style.display = isNormal ? "none" : "inline-flex";
+      $("screwModal").classList.add("show");
+    }
+
+    function closeScrewModal() { $("screwModal").classList.remove("show"); }
+    function fmt(v) { return Number.isFinite(Number(v)) ? Number(v).toFixed(4) : "-"; }
+
+    window.resolveDefect = async function (markerIdx) {
+      if (!currentSection || !db) return;
+      try {
+        await db.ref(`${PATHS.workstations}/${currentSection}/screws/${markerIdx}`).update({ status: "normal" });
+        toast(`나사 ${getScrewNumber(markerIdx)} 상태를 normal로 변경했습니다.`);
+        closeScrewModal();
+      } catch (error) {
+        alert("상태 업데이트 실패: " + error.message);
+      }
+    };
+
+    function showOverlay(title, message) {
+      const o = $("plotOverlay");
+      o.classList.remove("hidden");
+      o.innerHTML = `<div><b>${esc(title)}</b><p>${esc(message)}</p></div>`;
+    }
+    function hideOverlay() { $("plotOverlay").classList.add("hidden"); }
+
+    function subscribeRgbStream() {
+      db.ref(PATHS.rgbStream).on("value", (snapshot) => {
+        const data = snapshot.val() || {};
+        const url = data.url || data.rgb_url || "";
+        $("rgbUrlInput").value = url;
+        if (url && data.enabled !== false) applyRgbUrl(url, false);
+      });
+    }
+
+    function applyRgbUrl(url, showMsg = true) {
+      const img = $("rgbImage");
+      const ph = $("rgbPlaceholder");
+      if (!url) {
+        img.style.display = "none";
+        ph.style.display = "block";
+        return;
+      }
+      img.src = url;
+      img.style.display = "block";
+      ph.style.display = "none";
+      if (showMsg) toast("RGB 미리보기 URL을 적용했습니다.");
+    }
+
+    function subscribeException() {
+      db.ref(PATHS.exceptionCurrent).on("value", (snapshot) => renderException(snapshot.val()));
+    }
+
+    function renderException(ex) {
+      const active = Boolean(ex && ex.active);
+      const label = ex?.label || exceptionLabels[ex?.type] || "예외 없음";
+      const pill = $("exceptionPill"), badge = $("exceptionBadge"), panel = $("exceptionPanel");
+      if (active) {
+        selectedException = ex;
+        pill.className = "pill danger"; pill.innerHTML = `<span class="pulse"></span>${esc(label)}`;
+        badge.className = "tag danger"; badge.textContent = "ACTIVE";
+        panel.innerHTML = `<b>${esc(label)}</b><br>${esc(ex.message || exceptionMessages[ex.type] || "예외 상황이 발생했습니다.")}<br><button class="btn green" style="margin-top:10px" onclick="resumeException()">조치 완료 · 재개</button>`;
+        openExceptionModal(ex);
+      } else {
+        pill.className = "pill ok"; pill.innerHTML = `<span class="pulse"></span>예외 없음`;
+        badge.className = "tag ok"; badge.textContent = ex?.status || "NORMAL";
+        panel.innerHTML = "현재 활성 예외 상황이 없습니다.";
+      }
+    }
+
+    function openExceptionModal(ex) {
+      $("modalType").textContent = ex.type || "EXCEPTION";
+      $("modalTitle").textContent = ex.label || exceptionLabels[ex.type] || "예외 상황 발생";
+      $("modalMessage").textContent = ex.message || exceptionMessages[ex.type] || "작업 상태를 확인하세요.";
+      $("modalLine").textContent = ex.linenumber || ex.workstation || currentSection || "-";
+      $("modalTime").textContent = timeText(ex.time);
+      $("exceptionModal").classList.add("show");
+    }
+    function closeExceptionModal() { $("exceptionModal").classList.remove("show"); }
+
+    window.resumeException = async function () {
+      const ex = selectedException || {};
+      const type = ex.type || "UNKNOWN";
+      const now = firebase.database.ServerValue.TIMESTAMP;
+      try {
+        await db.ref(PATHS.exceptionCommand).push({ action: "RESUME", exceptionType: type, linenumber: ex.linenumber || 1, workstation: currentSection || null, requestedBy: "JoinGo Web UI", time: now });
+        await db.ref(PATHS.exceptionCurrent).update({ active: false, status: "RESUME_REQUESTED", resumeRequested: true, resumeRequestedAt: now, resumedBy: "JoinGo Web UI" });
+        await db.ref(PATHS.exceptionHistory).push({ event: "RESUME_REQUESTED", type, label: ex.label || exceptionLabels[type] || type, linenumber: ex.linenumber || 1, workstation: currentSection || null, status: "RESUME_REQUESTED", message: "작업자 조치 완료 후 웹 GUI에서 재개 신호를 전송했습니다.", time: Date.now(), loggedAt: now });
+        closeExceptionModal();
+        toast("재개 신호를 DB에 전송했습니다.");
+      } catch (error) { alert("재개 신호 전송 실패: " + error.message); }
+    };
+
+    $("sectionSelect").addEventListener("change", () => { currentSection = $("sectionSelect").value; selectedScrewKey = null; lastRenderKey = ""; const data = allData[currentSection]; const screws = normalizeScrews(data?.screws || data?.markers || {}); renderHomeSummary(data, screws); renderSummary(data, screws); renderScrewList(screws); scheduleRender(false); });
+    $("pointLimitSelect").addEventListener("change", () => { lastRenderKey = ""; scheduleRender(false); });
+    $("btnReload").addEventListener("click", () => { lastRenderKey = ""; scheduleRender(false); });
+    $("btnBackgroundReload").addEventListener("click", () => { lastRenderKey = ""; scheduleRender(true); });
+    $("btnCloseScrew").addEventListener("click", closeScrewModal);
+    $("screwModal").addEventListener("click", (e) => { if (e.target.id === "screwModal") closeScrewModal(); });
+    $("btnScrewResolve").addEventListener("click", () => { if (selectedScrewForModal?.key) resolveDefect(selectedScrewForModal.key); });
+    $("btnResume").addEventListener("click", () => resumeException());
+    $("btnCloseModal").addEventListener("click", closeExceptionModal);
+    $("exceptionModal").addEventListener("click", (e) => { if (e.target.id === "exceptionModal") closeExceptionModal(); });
+    $("btnApplyRgb").addEventListener("click", () => applyRgbUrl($("rgbUrlInput").value.trim(), true));
+    $("btnReloadRgb").addEventListener("click", () => db && db.ref(PATHS.rgbStream).once("value").then(s => { const d = s.val() || {}; applyRgbUrl(d.url || d.rgb_url || "", true); }));
+
+    initFirebase();
+  </script>
+
+  <!--
+    ══════════════════════════════════════════════════════════════════
+    WebXR / VR 섹션
+    담당 개발자: 조의연 (Cho Eui-yeon)
+    ══════════════════════════════════════════════════════════════════
+  -->
+  <!-- ══ WebXR VR Button ══════════════════════════════════════════ -->
+  <button id="vr-enter-btn" aria-label="VR 모드로 진입">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 8a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V8z" />
+      <circle cx="8.5" cy="12" r="2" />
+      <circle cx="15.5" cy="12" r="2" />
+    </svg>
+    Enter VR
+  </button>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const vrBtn = document.getElementById('vr-enter-btn');
+      let xrSession = null;
+      let renderer, scene, camera, screwGroup, uiGroup, dolly;
+
+      if (!navigator.xr) {
+        console.warn('[VR] WebXR API 미지원 브라우저입니다.');
+        return;
+      }
+
+      navigator.xr.isSessionSupported('immersive-vr').then(function (supported) {
+        if (supported) {
+          vrBtn.style.display = 'inline-flex';
+          vrBtn.addEventListener('click', toggleVR);
+          initThreeJS();
+        } else {
+          console.info('[VR] immersive-vr 세션을 이 기기에서 지원하지 않습니다.');
+        }
+      }).catch(function (e) {
+        console.warn('[VR] isSessionSupported 오류:', e);
+      });
+
+      function initThreeJS() {
+        const container = document.createElement('div');
+        container.style.display = 'none';
+        document.body.appendChild(container);
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a111a); // 기존 대시보드와 유사한 배경색
+
+        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+
+        // 조이스틱 이동을 위한 플레이어 돌리(Dolly) 생성
+        dolly = new THREE.Group();
+        scene.add(dolly);
+        dolly.add(camera);
+
+        const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+        light.position.set(0, 4, 0);
+        scene.add(light);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(0, 6, 0);
+        scene.add(dirLight);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.xr.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        screwGroup = new THREE.Group();
+        // [요청 반영 1] 스케일 5,5,5 로 확대 및 배치 최적화
+        screwGroup.scale.set(5, 5, 5);
+        screwGroup.position.set(0, -1.0, -1.2);
+        screwGroup.rotation.x = Math.PI / 12;
+        scene.add(screwGroup);
+
+        // === VR 컨트롤러 셋업 ===
+        const controller1 = renderer.xr.getController(0);
+        // [요청 반영 2] 인터럽트(트리거) 및 그립 모두 상호작용 지원
+        controller1.addEventListener('select', onSelect);
+        controller1.addEventListener('squeeze', onSelect);
+        dolly.add(controller1); // 돌리에 추가하여 이동 시 함께 움직이도록 함
+
+        const controller2 = renderer.xr.getController(1);
+        controller2.addEventListener('select', onSelect);
+        controller2.addEventListener('squeeze', onSelect);
+        dolly.add(controller2);
+
+        // 레이저 광선 시각화
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+        const line = new THREE.Line(lineGeo, lineMat);
+        line.scale.z = 5; // 광선 길이 5m
+        controller1.add(line.clone());
+        controller2.add(line.clone());
+
+        // === VR 고정 패널 UI 셋업 (3개 패널) ===
+        // [1] 작업대 선택 패널 (왼쪽)
+        uiGroup = new THREE.Group();
+        uiGroup.position.set(-2.2, 0.4, -1.2);
+        scene.add(uiGroup);
+
+        // [2] 점 개수 선택 패널 (중앙 위)
+        window._vrPointPanel = new THREE.Group();
+        window._vrPointPanel.position.set(0, 1.6, -1.2);
+        scene.add(window._vrPointPanel);
+
+        // [3] 정보 패널 (오른쪽)
+        window._vrInfoPanel = new THREE.Group();
+        window._vrInfoPanel.position.set(2.2, 0.4, -1.2);
+        scene.add(window._vrInfoPanel);
+      }
+
+      function createTextSprite(message, colorStr) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 512;
+        canvas.height = 128;
+        context.font = "bold 44px sans-serif";
+        context.fillStyle = colorStr;
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(message, 256, 64);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMaterial = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.scale.set(0.2, 0.05, 1);
+        return sprite;
+      }
+
+      // ─── 공통 패널/버튼 드로잉 헬퍼 ─────────────────────────────
+      function _clearGroup(g) {
+        while (g.children.length > 0) {
+          const c = g.children[0];
+          if (c.geometry) c.geometry.dispose();
+          if (c.material) { if (c.material.map) c.material.map.dispose(); c.material.dispose(); }
+          g.remove(c);
+        }
+      }
+
+      function _makePanelBg(w, h, titleText) {
+        const cw = 700, ch = Math.round(h / w * 700);
+        const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+        const cx = cv.getContext('2d');
+        cx.fillStyle = 'rgba(8,20,35,0.97)'; cx.fillRect(0, 0, cw, ch);
+        cx.strokeStyle = '#39d7ff'; cx.lineWidth = 4; cx.strokeRect(4, 4, cw - 8, ch - 8);
+        cx.fillStyle = 'rgba(57,215,255,0.15)'; cx.fillRect(4, 4, cw - 8, 80);
+        cx.font = 'bold 36px sans-serif'; cx.fillStyle = '#39d7ff';
+        cx.textAlign = 'center'; cx.textBaseline = 'middle';
+        cx.fillText(titleText, cw / 2, 44);
+        const tex = new THREE.CanvasTexture(cv);
+        const geo = new THREE.PlaneGeometry(w, h);
+        const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true });
+        return new THREE.Mesh(geo, mat);
+      }
+
+      function _makeBtn(label, bg, fg, w, h, action, group, px, py) {
+        const cw = 512, ch = 128;
+        const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+        const cx = cv.getContext('2d');
+        cx.fillStyle = bg;
+        if (cx.roundRect) { cx.beginPath(); cx.roundRect(4, 4, cw - 8, ch - 8, 16); cx.fill(); }
+        else { cx.fillRect(4, 4, cw - 8, ch - 8); }
+        cx.strokeStyle = 'rgba(255,255,255,0.35)'; cx.lineWidth = 2;
+        if (cx.roundRect) { cx.beginPath(); cx.roundRect(4, 4, cw - 8, ch - 8, 16); cx.stroke(); }
+        cx.font = 'bold 52px sans-serif'; cx.fillStyle = fg;
+        cx.textAlign = 'center'; cx.textBaseline = 'middle';
+        cx.fillText(label, cw / 2, ch / 2);
+        const tex = new THREE.CanvasTexture(cv);
+        const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.018), mat);
+        mesh.position.set(px, py, 0.012);
+        mesh.userData = { action };
+        group.add(mesh);
+        return mesh;
+      }
+
+      // ─── [패널 1] 작업대 선택 패널 ────────────────────────────────
+      function buildVRUI() {
+        _clearGroup(uiGroup);
+        const select = document.getElementById('sectionSelect');
+        const sections = select ? Array.from(select.options) : [];
+        const curVal = select ? select.value : '';
+        const n = sections.length;
+
+        // 패널 높이: 타이틀(0.2) + 버튼 n개(0.18each, 0.04gap) + 여백
+        const btnH = 0.16, gap = 0.04, topPad = 0.22;
+        const panelH = topPad + n * (btnH + gap) + 0.1;
+        const panelW = 1.3;
+        const bg = _makePanelBg(panelW, panelH, '작업대 선택');
+        uiGroup.add(bg);
+
+        const startY = panelH / 2 - topPad - btnH / 2;
+        sections.forEach((opt, i) => {
+          const isCur = opt.value === curVal;
+          const col = isCur ? 'rgba(57,215,255,0.35)' : 'rgba(20,60,110,0.9)';
+          const border = isCur ? '#39d7ff' : 'rgba(255,255,255,0.25)';
+          _makeBtn(opt.text || opt.value, col, isCur ? '#39d7ff' : '#ffffff',
+            panelW - 0.12, btnH, { type: 'ws', key: opt.value },
+            uiGroup, 0, startY - i * (btnH + gap));
+        });
+      }
+
+      // ─── [패널 2] 배경 점 개수 선택 패널 ─────────────────────────
+      const VR_POINT_LIMITS = [
+        { label: '마커만', value: 0 },
+        { label: '1만점', value: 10000 },
+        { label: '2만점', value: 20000 },
+        { label: '3만점', value: 30000 },
+        { label: '4만점', value: 40000 },
+        { label: '5만점', value: 50000 }
+      ];
+
+      function buildVRPointPanel() {
+        const pg = window._vrPointPanel;
+        if (!pg) return;
+        _clearGroup(pg);
+        const select = document.getElementById('pointLimitSelect');
+        const curVal = select ? parseInt(select.value) : 10000;
+        const n = VR_POINT_LIMITS.length;
+        const btnW = 0.26, btnH = 0.13, cols = 3;
+        const panelW = cols * btnW + (cols + 1) * 0.04;
+        const rows = Math.ceil(n / cols);
+        const panelH = 0.2 + rows * (btnH + 0.04) + 0.08;
+        const bg = _makePanelBg(panelW, panelH, '배경 점 개수');
+        pg.add(bg);
+        VR_POINT_LIMITS.forEach((item, i) => {
+          const col = i % cols, row = Math.floor(i / cols);
+          const isCur = item.value === curVal;
+          const px = -panelW / 2 + 0.04 + col * (btnW + 0.04) + btnW / 2;
+          const py = panelH / 2 - 0.22 - row * (btnH + 0.04) - btnH / 2;
+          _makeBtn(item.label, isCur ? 'rgba(57,215,255,0.35)' : 'rgba(20,60,110,0.9)',
+            isCur ? '#39d7ff' : '#ffffff', btnW, btnH,
+            { type: 'pointLimit', value: item.value }, pg, px, py);
+        });
+      }
+
+      // ─── [패널 3] 작업대 정보 패널 ───────────────────────────────
+      function buildVRInfoPanel() {
+        const ig = window._vrInfoPanel;
+        if (!ig) return;
+        _clearGroup(ig);
+        const panelW = 1.3, panelH = 1.3; // 리로드 버튼을 위해 높이 늘림
+        const bg = _makePanelBg(panelW, panelH, '작업대 정보');
+        ig.add(bg);
+
+        // 데이터 수집
+        let wsName = '-', screwCount = '-', defectCount = '-', dateStr = '-';
+        try {
+          if (typeof allData !== 'undefined' && typeof currentSection !== 'undefined' && allData[currentSection]) {
+            const d = allData[currentSection];
+            wsName = d.name || currentSection || '-';
+            const screws = typeof normalizeScrews === 'function'
+              ? normalizeScrews(d.screws || d.markers || {})
+              : (d.screws || d.markers || {});
+            const entries = Object.values(screws);
+            screwCount = String(entries.length);
+            defectCount = String(entries.filter(s => s.status !== 'normal').length);
+            const firstScrew = entries[0];
+            dateStr = d.updated_at || d.session_id || firstScrew?.time || '-';
+            if (dateStr.length > 15) dateStr = dateStr.substring(0, 15);
+          }
+        } catch (e) { }
+
+        const cw = 700, ch = 600;
+        const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+        const cx = cv.getContext('2d');
+        cx.clearRect(0, 0, cw, ch);
+
+        function drawInfoBox(label, value, x, y, w, h, accent) {
+          cx.fillStyle = 'rgba(15,35,60,0.9)';
+          cx.strokeStyle = accent || 'rgba(57,215,255,0.4)';
+          cx.lineWidth = 2;
+          cx.fillRect(x, y, w, h); cx.strokeRect(x, y, w, h);
+          cx.font = 'bold 22px sans-serif'; cx.fillStyle = 'rgba(180,200,220,0.8)';
+          cx.textAlign = 'left'; cx.textBaseline = 'top';
+          cx.fillText(label, x + 14, y + 12);
+          cx.font = 'bold 44px sans-serif'; cx.fillStyle = '#ffffff';
+          cx.textAlign = 'center'; cx.textBaseline = 'middle';
+          cx.fillText(value, x + w / 2, y + h * 0.65);
+        }
+
+        const bw = 310, bh = 120, pad = 20, startY = 110;
+        drawInfoBox('WORKSTATION', wsName, pad, startY, bw, bh, '#39d7ff');
+        drawInfoBox('SCREWS', screwCount, cw - pad - bw, startY, bw, bh, '#39d7ff');
+        drawInfoBox('DEFECT', defectCount, pad, startY + bh + pad, bw, bh,
+          parseInt(defectCount) > 0 ? '#ff4f4f' : '#27d97f');
+        drawInfoBox('UPDATED', dateStr, cw - pad - bw, startY + bh + pad, bw, bh, '#39d7ff');
+
+        const infoTex = new THREE.CanvasTexture(cv);
+        // 정보 표시 영역 (panelH 상단 일부 - 리로드 버튼 영역 제외)
+        const infoPlane = new THREE.Mesh(
+          new THREE.PlaneGeometry(panelW - 0.1, panelH * 0.75),
+          new THREE.MeshBasicMaterial({ map: infoTex, side: THREE.DoubleSide, transparent: true })
+        );
+        infoPlane.position.set(0, 0.1, 0.001);
+        ig.add(infoPlane);
+
+        // 패널 하단에 리로드 버튼 추가
+        _makeBtn('↺  리로드', 'rgba(57,215,255,0.2)', '#39d7ff',
+          panelW - 0.2, 0.14, { type: 'reload' }, ig, 0, -panelH / 2 + 0.13);
+      }
+
+      // ─── Raycaster & 상호작용 ──────────────────────────────────
+      const raycaster = new THREE.Raycaster();
+      const tempMatrix = new THREE.Matrix4();
+      let _vrSelectCooldown = false;
+
+      function onSelect(event) {
+        if (_vrSelectCooldown) return;
+        const controller = event.target;
+        tempMatrix.identity().extractRotation(controller.matrixWorld);
+        raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+        raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+
+        // 세 패널 모두 검사
+        const allPanelChildren = [
+          ...uiGroup.children,
+          ...(window._vrPointPanel ? window._vrPointPanel.children : []),
+          ...(window._vrInfoPanel ? window._vrInfoPanel.children : [])
+        ];
+        const intersects = raycaster.intersectObjects(allPanelChildren, true);
+        if (intersects.length === 0) return;
+        const obj = intersects[0].object;
+        const act = obj.userData && obj.userData.action;
+        if (!act) return;
+
+        _vrSelectCooldown = true;
+        setTimeout(() => { _vrSelectCooldown = false; }, 600); // 0.6초 쿨다운
+
+        if (act.type === 'ws') {
+          selectWorkstation(act.key);
+        } else if (act.type === 'pointLimit') {
+          setVRPointLimit(act.value);
+        } else if (act.type === 'reload') {
+          // 정보 패널 리로드: 현재 작업대의 최신 데이터 + 배경을 다시 가져옴
+          const select = document.getElementById('sectionSelect');
+          if (select) select.dispatchEvent(new Event('change')); // scheduleRender 트리거
+          setTimeout(() => {
+            updateScrews();
+            buildVRUI();
+            buildVRPointPanel();
+            buildVRInfoPanel();
+          }, 2500);
+        }
+      }
+
+      function selectWorkstation(key) {
+        const select = document.getElementById('sectionSelect');
+        if (!select) return;
+        select.value = key;
+        // 기존 change 이벤트로 currentSection 업데이트 + scheduleRender 호출
+        select.dispatchEvent(new Event('change'));
+        // [핵심 수정] scheduleRender가 bgCache를 갱신할 시간을 충분히 준 후 VR 업데이트
+        setTimeout(() => {
+          updateScrews();
+          buildVRUI();
+          buildVRInfoPanel();
+        }, 2500); // 배경 로드에 최대 2.5초 여유
+      }
+
+      function setVRPointLimit(val) {
+        const select = document.getElementById('pointLimitSelect');
+        if (select) {
+          select.value = String(val);
+          select.dispatchEvent(new Event('change'));
+        }
+        setTimeout(() => {
+          updateScrews();
+          buildVRPointPanel();
+        }, 2500);
+      }
+
+      function createScrewMesh(info, numStr) {
+        const isNormal = info.status === "normal";
+        const colorHex = isNormal ? 0x27d97f : 0xff4f4f;
+        const colorStr = isNormal ? "#27d97f" : "#ff4f4f";
+
+        const group = new THREE.Group();
+
+        // [수정] 나사 마커: 투명 구(Sphere) 형태
+        const sphereGeo = new THREE.SphereGeometry(0.02, 16, 12);
+        const mat = new THREE.MeshPhongMaterial({
+          color: colorHex,
+          transparent: true,
+          opacity: 0.55,         // 투명도
+          shininess: 120,        // 하이라이트 강도
+          specular: 0xffffff,    // 하이라이트 색상
+          side: THREE.FrontSide
+        });
+        const head = new THREE.Mesh(sphereGeo, mat);
+        // 증북을 위한 와이어프레임 테두리 (\uc120택 똠 특유)
+        const wireGeo = new THREE.SphereGeometry(0.0205, 8, 6);
+        const wireMat = new THREE.MeshBasicMaterial({
+          color: colorHex, wireframe: true, transparent: true, opacity: 0.25
+        });
+        group.add(new THREE.Mesh(wireGeo, wireMat));
+        group.add(head);
+
+        // 위에 떠 있는 텍스트
+        const sprite = createTextSprite(`나사 ${numStr}`, colorStr);
+        sprite.position.y = 0.035; // 실린더 위로 살짝 띄움
+        sprite.scale.set(0.12, 0.03, 1);
+        group.add(sprite);
+
+        // 좌표 가져오기
+        let x = info.position?.x || 0;
+        let y = info.position?.y || 0;
+        let z = info.position?.z || 0;
+
+        // Plotly 좌표계는 mm 단위일 가능성이 높음
+        let scale = (Math.abs(x) < 10 && Math.abs(y) < 10 && Math.abs(x) > 0.001) ? 1 : 0.001;
+
+        // 축 변환: Plotly(X 우측, Y 전방, Z 상단) -> Three(X 우측, Y 상단, Z 후방)
+        group.position.set(x * scale, z * scale, -y * scale);
+
+        return group;
+      }
+
+      function updateScrews() {
+        // 기존 렌더링된 메쉬 전부 제거
+        while (screwGroup.children.length > 0) {
+          screwGroup.remove(screwGroup.children[0]);
+        }
+
+        try {
+          // 기존 코드의 전역 데이터(allData, currentSection) 사용
+          if (typeof allData !== 'undefined' && typeof currentSection !== 'undefined' && currentSection && allData[currentSection]) {
+            const data = allData[currentSection];
+            let screws = data.screws || data.markers || {};
+
+            if (typeof normalizeScrews === 'function') {
+              screws = normalizeScrews(screws);
+            }
+
+            // 바닥면 안내용 그리드 (1m x 1m)
+            const gridHelper = new THREE.GridHelper(1, 10, 0x39d7ff, 0x333333);
+            gridHelper.position.y = -0.005; // 나사 바닥보다 약간 아래
+            screwGroup.add(gridHelper);
+
+            // [추가] 배경 Point Cloud 렌더링
+            if (typeof bgCache !== 'undefined' && bgCache.data) {
+              const limitSelect = document.getElementById('pointLimitSelect');
+              const limit = limitSelect ? parseInt(limitSelect.value) : 50000;
+              let sampled = typeof sampleBackground === 'function' ? sampleBackground(bgCache.data, limit) : null;
+
+              if (sampled && sampled.x && sampled.x.length > 0) {
+                const len = sampled.x.length;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(len * 3);
+                const colors = new Float32Array(len * 3);
+                const isColorArray = Array.isArray(sampled.colors);
+
+                for (let i = 0; i < len; i++) {
+                  const px = sampled.x[i] * 0.001;
+                  const py = sampled.y[i] * 0.001;
+                  const pz = sampled.z[i] * 0.001;
+
+                  positions[i * 3] = px;
+                  positions[i * 3 + 1] = pz;
+                  positions[i * 3 + 2] = -py;
+
+                  let r = 155 / 255, g = 170 / 255, b = 190 / 255;
+                  const cVal = isColorArray ? sampled.colors[i] : sampled.colors;
+
+                  if (typeof cVal === 'string') {
+                    if (cVal.startsWith('rgb')) {
+                      const match = cVal.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                      if (match) {
+                        r = parseInt(match[1]) / 255;
+                        g = parseInt(match[2]) / 255;
+                        b = parseInt(match[3]) / 255;
+                      }
+                    } else if (cVal.startsWith('#')) {
+                      const hex = cVal.replace('#', '');
+                      if (hex.length >= 6) {
+                        r = parseInt(hex.substring(0, 2), 16) / 255;
+                        g = parseInt(hex.substring(2, 4), 16) / 255;
+                        b = parseInt(hex.substring(4, 6), 16) / 255;
+                      }
+                    }
+                  }
+
+                  colors[i * 3] = r;
+                  colors[i * 3 + 1] = g;
+                  colors[i * 3 + 2] = b;
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+                const material = new THREE.PointsMaterial({
+                  size: 0.015, // [수정] 점 크기를 대폭 키워서 Point Cloud가 면(Surface)처럼 보이게 함
+                  vertexColors: true,
+                  transparent: false, // 불투명하게 덮어버림
+                  sizeAttenuation: true
+                });
+
+                const pointCloud = new THREE.Points(geometry, material);
+                screwGroup.add(pointCloud);
+              }
+            }
+
+            // 각 나사를 3D 공간에 배치
+            Object.entries(screws).forEach(([key, info]) => {
+              let numStr = key.replace(/\D/g, '');
+              if (typeof getScrewNumber === 'function') {
+                numStr = getScrewNumber(key);
+              }
+              const mesh = createScrewMesh(info, numStr);
+              screwGroup.add(mesh);
+            });
+          }
+        } catch (e) {
+          console.error('[VR] 나사 렌더링 중 오류 발생:', e);
+        }
+      }
+
+      // ── VR \ud568\uc218\ub97c \uc804\uc5ed\uc73c\ub85c \ub178\ucd9c \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+      // Firebase \ub9ac\uc2a4\ub108(\ub2e4\ub978 \uc2a4\ud06c\ub9bd\ud2b8 \ube14\ub85d)\uc5d0\uc11c \ud638\ucd9c\ud560 \uc218 \uc788\ub3c4\ub85d
+      // IIFE \ud074\ub85c\uc800 \ub0b4\ubd80\uc5d0\ub9cc \uc874\uc7ac\ud558\ub294 \ud568\uc218\ub97c window\uc5d0 \ub9c8\uc6b4\ud305\ud568\uc73c\ub85c\uc368
+      // \uc678\ubd80 \ucf54\ub4dc\uc5d0\uc11c `window._vrActive` \uccb4\ud06c \ud6c4 \uc548\uc804\ud558\uac8c \ud638\ucd9c \uac00\ub2a5
+      window.updateScrews = updateScrews;
+      window.buildVRUI = buildVRUI;
+      window.buildVRPointPanel = buildVRPointPanel;
+      window.buildVRInfoPanel = buildVRInfoPanel;
+
+      function toggleVR() {
+        if (xrSession) {
+          xrSession.end();
+        } else {
+          startVR();
+        }
+      }
+
+      function startVR() {
+        const sessionInit = { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] };
+        navigator.xr.requestSession('immersive-vr', sessionInit).then(function (session) {
+          xrSession = session;
+          window._vrActive = true; // Firebase 리스너가 VR 활성 여부를 확인하기 위한 전역 플래그
+          vrBtn.innerHTML =
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" ' +
+            'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M2 8a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V8z"/>' +
+            '<circle cx="8.5" cy="12" r="2"/><circle cx="15.5" cy="12" r="2"/>' +
+            '</svg> Exit VR';
+          vrBtn.style.borderColor = 'rgba(255, 91, 104, .55)';
+          vrBtn.style.background = 'linear-gradient(135deg, rgba(255,91,104,.22), rgba(180,30,50,.12))';
+          vrBtn.style.color = '#ffaab0';
+
+          // VR 환경에 진입할 때 최신 데이터로 나사 배치 및 3개 패널 모두 초기화
+          updateScrews();
+          buildVRUI();         // [패널 1] 작업대 선택
+          buildVRPointPanel(); // [패널 2] 배경 점 개수 선택
+          buildVRInfoPanel();  // [패널 3] 작업대 정보
+
+          renderer.xr.setSession(session);
+          session.addEventListener('end', onSessionEnd);
+
+          // 렌더링 루프 가동
+          renderer.setAnimationLoop(render);
+
+        }).catch(function (e) {
+          console.error('[VR] 세션 시작 실패:', e);
+          alert('VR 세션 시작에 실패했습니다.\\n' + e.message);
+        });
+      }
+
+      // [요청 반영 3] 조이스틱을 통한 3D 공간 자유 이동 로직
+      function handleThumbsticks() {
+        const session = renderer.xr.getSession();
+        if (!session || !session.inputSources) return;
+
+        for (const source of session.inputSources) {
+          if (source.gamepad && source.gamepad.axes.length >= 4) {
+            const ax = source.gamepad.axes[2]; // 조이스틱 좌우
+            const ay = source.gamepad.axes[3]; // 조이스틱 상하
+
+            // 왼쪽 컨트롤러: 전후좌우 이동 (카메라가 바라보는 수평 방향 기준)
+            if (source.handedness === 'left') {
+              if (Math.abs(ax) > 0.1 || Math.abs(ay) > 0.1) {
+                const speed = 0.015; // [수정] 멀미 방지를 위해 비행 속도 대폭 감소
+                const direction = new THREE.Vector3();
+                camera.getWorldDirection(direction);
+                direction.y = 0; // 고도는 유지하고 수평으로만 이동
+                direction.normalize();
+
+                // 전진 / 후진
+                dolly.position.addScaledVector(direction, -ay * speed);
+
+                // 좌우 게걸음 (직교 벡터)
+                const right = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
+                dolly.position.addScaledVector(right, ax * speed);
+              }
+            }
+            // 오른쪽 컨트롤러: 상하 고도 비행 및 시야 회전
+            if (source.handedness === 'right') {
+              if (Math.abs(ay) > 0.1) {
+                const speed = 0.015; // 상하 비행 속도 감소
+                dolly.position.y -= ay * speed; // 조이스틱을 위로 밀면 위로 비행
+              }
+              if (Math.abs(ax) > 0.1) {
+                // 부드러운 회전 (Smooth turn)
+                dolly.rotation.y -= ax * 0.015; // [수정] 멀미 방지를 위해 회전 속도 대폭 감소
+              }
+            }
+          }
+        }
+      }
+
+      function render() {
+        handleThumbsticks();
+        renderer.render(scene, camera);
+      }
+
+      function onSessionEnd() {
+        xrSession = null;
+        window._vrActive = false; // VR 종료 시 플래그 완전 해제
+        renderer.setAnimationLoop(null);
+
+        vrBtn.innerHTML =
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" ' +
+          'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M2 8a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V8z"/>' +
+          '<circle cx="8.5" cy="12" r="2"/><circle cx="15.5" cy="12" r="2"/>' +
+          '</svg> Enter VR';
+        vrBtn.style.borderColor = '';
+        vrBtn.style.background = '';
+        vrBtn.style.color = '';
+      }
+    })();
+  </script>
+  <!-- ══ /WebXR VR Button ═════════════════════════════════════════ -->
+</body>
+
+</html>
